@@ -380,7 +380,7 @@
     </div>
 
     <!-- Livin' Food -->
-    <div class="card">
+    <div class="card" id="cardLivinFood" style="display:none;">
       <div class="card-title-row">
         <div class="card-title-icon">🛒</div>
         <div class="card-title-text">
@@ -389,7 +389,18 @@
         </div>
       </div>
 
-      <div class="field" id="f-livinfood">
+      <div class="field" id="f-merchantlivinfood">
+        <label>Nama Merchant <span class="wajib">*</span></label>
+        <div class="input-wrap">
+          <span class="input-icon">🏪</span>
+          <select id="namaMerchantLivinFood" required>
+            <option value="">-- Pilih Merchant --</option>
+          </select>
+        </div>
+        <div class="error-msg">Wajib dipilih.</div>
+      </div>
+
+      <div class="field" id="f-livinfood" style="margin-top:14px;">
         <label>Jumlah Transaksi Livin' Food <span class="wajib">*</span></label>
         <input type="number" id="jumlahTransaksiLivinFood" placeholder="0" min="0" value="0" required>
         <div class="error-msg">Wajib diisi.</div>
@@ -568,6 +579,52 @@ window.onload = function() {
   });
 };
 
+// ── Data Merchant per Area ───────────────────────────────────────
+// ── Kode cabang eligible Livin' Food ────────────────────────────
+var LIVIN_FOOD_ELIGIBLE = {
+  // Area Makassar Kartini
+  '15200':true,'15201':true,'15202':true,'15213':true,'15216':true,
+  '15220':true,'15221':true,'15225':true,'15237':true,'15238':true,
+  '15242':true,'15243':true,'15245':true,'15246':true,'15249':true,
+  '15250':true,'15251':true,'15252':true,'15271':true,'15291':true,
+  '15293':true,'15297':true,
+  // Area Makassar Ratulangi
+  '17400':true,'17401':true,'17402':true,'17403':true,'17404':true,
+  '17406':true,'17407':true,'17408':true,'17409':true,'17410':true,
+  '17411':true,'17452':true,'17453':true,'17454':true,'17455':true,
+  '17456':true,'17457':true,'17458':true,'17459':true,'17463':true
+};
+
+var MERCHANT_LIVIN = {
+  'Area Makassar Kartini':   ['Konijiwa', 'Coto Dg Tayang', 'Darikopi'],
+  'Area Makassar Ratulangi': ['Eksposed', 'Mas Daeng']
+};
+
+function hideLivinFoodCard() {
+  var card = document.getElementById('cardLivinFood');
+  if (card) {
+    card.style.display = 'none';
+    document.getElementById('jumlahTransaksiLivinFood').value = '0';
+    document.getElementById('namaMerchantLivinFood').innerHTML = '<option value="">-- Pilih Merchant --</option>';
+  }
+}
+
+function updateLivinFoodCard(kode) {
+  var card = document.getElementById('cardLivinFood');
+  if (!card) return;
+  var area = document.getElementById('areaValue').value;
+  if (LIVIN_FOOD_ELIGIBLE[kode]) {
+    // Isi dropdown merchant sesuai area
+    var sel = document.getElementById('namaMerchantLivinFood');
+    var merchants = MERCHANT_LIVIN[area] || [];
+    sel.innerHTML = '<option value="">-- Pilih Merchant --</option>' +
+      merchants.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('');
+    card.style.display = 'block';
+  } else {
+    hideLivinFoodCard();
+  }
+}
+
 // ── Cascade: Area → Cabang ──────────────────────────────────────
 document.getElementById('selectArea').addEventListener('change', function() {
   var area = this.value;
@@ -578,6 +635,7 @@ document.getElementById('selectArea').addEventListener('change', function() {
   document.getElementById('kodeCabang').value = '';
   document.getElementById('namaCabang').value = '';
   document.getElementById('areaValue').value = area;
+  hideLivinFoodCard();
   if (!area) return;
   (DATA_CABANG[area] || []).forEach(function(c) {
     var o = document.createElement('option');
@@ -599,8 +657,10 @@ document.getElementById('selectCabang').addEventListener('change', function() {
     document.getElementById('labelCabang').textContent = kode + ' · ' + nama;
     document.getElementById('infoCabang').classList.add('show');
     clearErr('f-cabang');
+    updateLivinFoodCard(kode);
   } else {
     document.getElementById('infoCabang').classList.remove('show');
+    hideLivinFoodCard();
   }
 });
 
@@ -626,7 +686,9 @@ function validasi() {
     {wrap:'f-leadscakra',     id:'totalLeadsCakra'},
     {wrap:'f-kunjungancakra', id:'totalKunjunganCakra'},
     {wrap:'f-gapcakra',       id:'gapCakra'},
-    {wrap:'f-livinfood',      id:'jumlahTransaksiLivinFood'}
+    ...(document.getElementById('cardLivinFood').style.display !== 'none'
+        ? [{wrap:'f-merchantlivinfood', id:'namaMerchantLivinFood'},
+           {wrap:'f-livinfood', id:'jumlahTransaksiLivinFood'}] : [])
   ].forEach(function(f) {
     var el = document.getElementById(f.id);
     var wrap = document.getElementById(f.wrap);
@@ -677,6 +739,7 @@ document.getElementById('formLaporan').addEventListener('submit', function(ev) {
     totalLeadsCakra     : document.getElementById('totalLeadsCakra').value || '0',
     totalKunjunganCakra : document.getElementById('totalKunjunganCakra').value || '0',
     gapCakra            : document.getElementById('gapCakra').value || '0',
+    namaMerchantLivinFood    : document.getElementById('namaMerchantLivinFood').value || '-',
     jumlahTransaksiLivinFood : document.getElementById('jumlahTransaksiLivinFood').value || '0',
     kendala         : document.getElementById('kendala').value.trim() || '-',
     keterangan      : document.getElementById('keterangan').value.trim() || '-'
