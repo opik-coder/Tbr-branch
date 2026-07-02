@@ -320,6 +320,10 @@
     <!-- Livin' Food -->
     <div class="card">
       <div class="card-title">🛒 Livin' Food</div>
+      <div id="infoMerchantLivinFood" style="display:none;margin-bottom:10px;">
+        <div class="info-label" style="font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;font-weight:600;">Merchant</div>
+        <div class="info-value" id="statMerchantLivinFood" style="font-size:16px;font-weight:700;color:#fbbf24;margin-top:2px;">-</div>
+      </div>
       <div class="stats-row">
         <div class="stat-box highlight">
           <div class="stat-number" id="statLivinFood">0</div>
@@ -421,6 +425,10 @@ function tampilkanLaporan(d) {
   document.getElementById('statKunjunganCakra').textContent = d.totalKunjunganCakra || 0;
   document.getElementById('statGapCakra').textContent = d.gapCakra || 0;
   document.getElementById('statLivinFood').textContent = d.jumlahTransaksiLivinFood || 0;
+  if (d.namaMerchantLivinFood && d.namaMerchantLivinFood !== '-') {
+    document.getElementById('statMerchantLivinFood').textContent = d.namaMerchantLivinFood;
+    document.getElementById('infoMerchantLivinFood').style.display = 'block';
+  }
 
   if (d.kendala && d.kendala !== '-') {
     document.getElementById('infoKendala').textContent = d.kendala;
