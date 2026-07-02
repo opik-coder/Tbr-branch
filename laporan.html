@@ -317,6 +317,17 @@
       </div>
     </div>
 
+    <!-- Livin' Food -->
+    <div class="card">
+      <div class="card-title">🛒 Livin' Food</div>
+      <div class="stats-row">
+        <div class="stat-box highlight">
+          <div class="stat-number" id="statLivinFood">0</div>
+          <div class="stat-label">Jumlah Transaksi Livin' Food</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Teks WA -->
     <div class="card">
       <div class="card-title">💬 Format Laporan WhatsApp</div>
@@ -409,6 +420,7 @@ function tampilkanLaporan(d) {
   document.getElementById('statLeadsCakra').textContent = d.totalLeadsCakra || 0;
   document.getElementById('statKunjunganCakra').textContent = d.totalKunjunganCakra || 0;
   document.getElementById('statGapCakra').textContent = d.gapCakra || 0;
+  document.getElementById('statLivinFood').textContent = d.jumlahTransaksiLivinFood || 0;
 
   if (d.kendala && d.kendala !== '-') {
     document.getElementById('infoKendala').textContent = d.kendala;
