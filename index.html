@@ -618,6 +618,7 @@ function updateLivinFoodCard(kode) {
     var sel = document.getElementById('namaMerchantLivinFood');
     var merchants = MERCHANT_LIVIN[area] || [];
     sel.innerHTML = '<option value="">-- Pilih Merchant --</option>' +
+      '<option value="Tidak Ada">Tidak Ada</option>' +
       merchants.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('');
     card.style.display = 'block';
   } else {
