@@ -378,6 +378,23 @@
       </div>
     </div>
 
+    <!-- Livin' Food -->
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title-icon">🛒</div>
+        <div class="card-title-text">
+          <span class="name">Livin' Food</span>
+          <span class="card-title-underline"></span>
+        </div>
+      </div>
+
+      <div class="field" id="f-livinfood">
+        <label>Jumlah Transaksi Livin' Food <span class="wajib">*</span></label>
+        <input type="number" id="jumlahTransaksiLivinFood" placeholder="0" min="0" value="0" required>
+        <div class="error-msg">Wajib diisi.</div>
+      </div>
+    </div>
+
     <!-- Kendala & Keterangan -->
     <div class="card">
       <div class="card-title-row">
@@ -607,7 +624,8 @@ function validasi() {
     {wrap:'f-redc',    id:'jumlahRetensiEDC'},
     {wrap:'f-leadscakra',     id:'totalLeadsCakra'},
     {wrap:'f-kunjungancakra', id:'totalKunjunganCakra'},
-    {wrap:'f-gapcakra',       id:'gapCakra'}
+    {wrap:'f-gapcakra',       id:'gapCakra'},
+    {wrap:'f-livinfood',      id:'jumlahTransaksiLivinFood'}
   ].forEach(function(f) {
     var el = document.getElementById(f.id);
     var wrap = document.getElementById(f.wrap);
@@ -658,6 +676,7 @@ document.getElementById('formLaporan').addEventListener('submit', function(ev) {
     totalLeadsCakra     : document.getElementById('totalLeadsCakra').value || '0',
     totalKunjunganCakra : document.getElementById('totalKunjunganCakra').value || '0',
     gapCakra            : document.getElementById('gapCakra').value || '0',
+    jumlahTransaksiLivinFood : document.getElementById('jumlahTransaksiLivinFood').value || '0',
     kendala         : document.getElementById('kendala').value.trim() || '-',
     keterangan      : document.getElementById('keterangan').value.trim() || '-'
   });
