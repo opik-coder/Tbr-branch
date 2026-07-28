@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pipeline Konversi EDC to LVM — RTF Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, sans-serif;
+      background: radial-gradient(1100px 620px at 50% 4%, #202f5e 0%, #131c3f 38%, #0a0f24 70%, #05070f 100%);
+      color: #fff;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Top brand bar */
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; }
+    .topbar-brand { display: flex; align-items: center; gap: 10px; }
+    .topbar-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #2f5fe0; color: #fff; font-size: 11px; font-weight: 800;
+      letter-spacing: .3px; padding: 4px 7px; border-radius: 5px; line-height: 1;
+    }
+    .topbar-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 18px; color: #fff; line-height: 1.1; }
+    .topbar-sub { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 2px; }
+    .topbar-nav {
+      font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,.75);
+      text-decoration: none; padding: 8px 16px; border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px; transition: background .2s, color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+    .topbar-nav:hover { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.3); }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 8px 16px 44px; position: relative; z-index: 1; }
+
+    .page-head { text-align: center; margin: 28px 0 24px; }
+    .breadcrumb { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: rgba(255,255,255,.4); margin-bottom: 10px; text-decoration: none; display: inline-block; }
+    .breadcrumb:hover { color: rgba(255,255,255,.7); }
+    .page-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: 28px; letter-spacing: -.3px; color: #fff; margin-bottom: 8px; }
+    .page-subtitle { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.55); }
+
+    .card {
+      position: relative;
+      background: rgba(255,255,255,.035);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 20px;
+      padding: 24px;
+      margin-top: 16px;
+      box-shadow: 0 20px 50px -24px rgba(0,0,0,.6);
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 10px;
+    }
+    .stat-box {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 14px 6px;
+      text-align: center;
+    }
+    .stat-box.highlight { background: rgba(47,95,224,.12); border-color: rgba(47,95,224,.4); }
+    .stat-number { font-size: 24px; font-weight: 800; line-height: 1; color: #fff; }
+    .stat-box.highlight .stat-number { color: #8faaf5; }
+    .stat-box.proses .stat-number { color: #fbbf24; }
+    .stat-box.sudahlvm .stat-number { color: #38bdf8; }
+    .stat-box.done .stat-number { color: #5ee08a; }
+    .stat-label { font-size: 10.5px; color: rgba(255,255,255,.55); font-weight: 600; margin-top: 5px; line-height: 1.3; }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 500;
+      color: #fff;
+      background: rgba(255,255,255,.05);
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,.35); }
+    .search-input:focus { border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.08); }
+
+    .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-tab {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.75);
+      font-size: 12.5px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+    }
+    .filter-tab.active { background: rgba(47,95,224,.22); border-color: rgba(47,95,224,.5); color: #fff; }
+
+    .list-item {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 13px 16px;
+      margin-bottom: 10px;
+    }
+    .list-item:last-child { margin-bottom: 0; }
+    .list-item-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .list-item-nama { font-size: 14.5px; font-weight: 700; color: #fff; }
+    .list-item-info { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 4px; }
+    .list-item-tgl { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 6px; }
+
+    .badge {
+      font-size: 11px; font-weight: 700; padding: 4px 11px;
+      border-radius: 999px; white-space: nowrap; flex-shrink: 0;
+    }
+    .badge-proses     { background: rgba(251,191,36,.16); color: #fbbf24; border: 1px solid rgba(251,191,36,.4); }
+    .badge-sudahlvm   { background: rgba(56,189,248,.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,.4); }
+    .badge-done       { background: rgba(94,224,138,.16); color: #86efac; border: 1px solid rgba(94,224,138,.4); }
+
+    .empty { text-align: center; padding: 24px; color: rgba(255,255,255,.5); font-size: 13.5px; }
+
+    #loadingState { text-align: center; padding: 60px 20px; color: rgba(255,255,255,.7); position: relative; z-index: 1; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid rgba(255,255,255,.15);
+      border-top-color: #4472ef;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    .footer { text-align: center; padding: 40px 16px 4px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.4); }
+
+    .back-link {
+      display: inline-block; margin-top: 4px;
+      font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,.75);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <span class="topbar-badge">R10</span>
+    <div>
+      <div class="topbar-title">RTF Report</div>
+      <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
+    </div>
+  </div>
+  <a class="topbar-nav" href="index.html">Form Laporan →</a>
+</div>
+
+<div class="container">
+
+  <div class="page-head">
+    <a class="breadcrumb" href="index.html">← Kembali ke Form Laporan</a>
+    <h1 class="page-title">Pipeline Konversi EDC to LVM</h1>
+    <div class="page-subtitle" id="headerSubtitle">Memuat data...</div>
+  </div>
+
+  <div id="loadingState">
+    <div class="spinner"></div>
+    <div>Memuat data pipeline...</div>
+  </div>
+
+  <div id="kontenPipeline" style="display:none;">
+
+    <div class="card">
+      <div class="card-title">Ringkasan Progress</div>
+      <div class="stats-row">
+        <div class="stat-box highlight">
+          <div class="stat-number" id="statTotal">0</div>
+          <div class="stat-label">Total Merchant</div>
+        </div>
+        <div class="stat-box proses">
+          <div class="stat-number" id="statProses">0</div>
+          <div class="stat-label">Proses</div>
+        </div>
+        <div class="stat-box sudahlvm">
+          <div class="stat-number" id="statSudahLVM">0</div>
+          <div class="stat-label">Sudah LVM</div>
+        </div>
+        <div class="stat-box done">
+          <div class="stat-number" id="statDone">0</div>
+          <div class="stat-label">Done Akuisisi</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="cardFilter" style="display:none;">
+      <div class="card-title">Filter</div>
+      <input type="text" id="searchBox" class="search-input" placeholder="Cari nama cabang / merchant...">
+      <div class="filter-tabs" id="filterTabs">
+        <button class="filter-tab active" data-status="">Semua</button>
+        <button class="filter-tab" data-status="Proses">Proses</button>
+        <button class="filter-tab" data-status="Sudah LVM">Sudah LVM</button>
+        <button class="filter-tab" data-status="Done Akuisisi">Done Akuisisi</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Daftar Merchant</div>
+      <div id="listPipeline"></div>
+    </div>
+
+  </div>
+
+  <div id="errorState" style="display:none;">
+    <div class="page-head" style="margin-top:60px;">
+      <div style="font-size:44px;margin-bottom:16px;">⚠</div>
+      <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin-bottom:8px;color:#fff;">Gagal Memuat Data</h2>
+      <p style="color:rgba(255,255,255,.55);font-size:13.5px;margin-bottom:20px;" id="errorMsg">Terjadi kesalahan saat mengambil data pipeline.</p>
+      <a href="index.html" class="back-link">← Kembali ke Form Laporan</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    Pipeline Konversi EDC to LVM<br>
+    <span>Copyright &copy; 2026 RTF Team</span>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// ⚙️ KONFIGURASI — GANTI URL INI DENGAN URL APPS SCRIPT ANDA
+// ================================================================
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl4SiO8CeyYrF4vDwmx5D0n8qjcq3Vk5HHwFt56grTdyouKEyOAmiB6-vKurKTXS9U/exec";
+// ================================================================
+
+var DATA_ALL = [];
+var KODE_FILTER = '';
+var STATUS_FILTER = '';
+
+window.onload = function() {
+  var params = new URLSearchParams(window.location.search);
+  KODE_FILTER = params.get('kode') || '';
+
+  var url = APPS_SCRIPT_URL + '?action=getPipelineAll' +
+    (KODE_FILTER ? '&kodeCabang=' + encodeURIComponent(KODE_FILTER) : '');
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.error) { tampilkanError(res.error); return; }
+      DATA_ALL = res.data || [];
+      tampilkanData();
+    })
+    .catch(function(err) { tampilkanError(err.message); });
+};
+
+function tampilkanData() {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('kontenPipeline').style.display = 'block';
+
+  var subtitle = document.getElementById('headerSubtitle');
+  if (KODE_FILTER) {
+    if (DATA_ALL.length) {
+      subtitle.textContent = DATA_ALL[0].namaCabang + ' · Kode ' + DATA_ALL[0].kodeCabang;
+    } else {
+      subtitle.textContent = 'Kode Cabang ' + KODE_FILTER + ' — belum ada data merchant';
+    }
+  } else {
+    subtitle.textContent = 'Semua Cabang · Region X (Sulawesi & Maluku)';
+    document.getElementById('cardFilter').style.display = 'block';
+  }
+
+  render();
+
+  document.getElementById('searchBox').addEventListener('input', render);
+  document.querySelectorAll('.filter-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-tab').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      STATUS_FILTER = btn.dataset.status;
+      render();
+    });
+  });
+}
+
+function badgeClassFor(status) {
+  if (status === 'Sudah LVM') return 'badge-sudahlvm';
+  if (status === 'Done Akuisisi') return 'badge-done';
+  return 'badge-proses';
+}
+
+function render() {
+  var keyword = (document.getElementById('searchBox') && document.getElementById('searchBox').value || '').toLowerCase().trim();
+
+  var filtered = DATA_ALL.filter(function(m) {
+    if (STATUS_FILTER && m.status !== STATUS_FILTER) return false;
+    if (!keyword) return true;
+    var gabungan = (m.namaMerchant + ' ' + m.namaCabang + ' ' + m.area + ' ' + m.kodeCabang).toLowerCase();
+    return gabungan.indexOf(keyword) !== -1;
+  });
+
+  // Ringkasan selalu dihitung dari SEMUA data (bukan hasil filter pencarian),
+  // supaya angka ringkasan konsisten walau lagi nyari/filter status tertentu.
+  var proses = 0, sudah = 0, done = 0;
+  DATA_ALL.forEach(function(m) {
+    if (m.status === 'Proses') proses++;
+    else if (m.status === 'Sudah LVM') sudah++;
+    else if (m.status === 'Done Akuisisi') done++;
+  });
+  document.getElementById('statTotal').textContent = DATA_ALL.length;
+  document.getElementById('statProses').textContent = proses;
+  document.getElementById('statSudahLVM').textContent = sudah;
+  document.getElementById('statDone').textContent = done;
+
+  var wrap = document.getElementById('listPipeline');
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty">Tidak ada merchant yang cocok.</div>';
+    return;
+  }
+
+  wrap.innerHTML = filtered.map(function(m) {
+    var infoBaris = KODE_FILTER
+      ? ''
+      : '<div class="list-item-info">' + m.area + ' · ' + m.namaCabang + ' (' + m.kodeCabang + ')</div>';
+    return '' +
+      '<div class="list-item">' +
+        '<div class="list-item-top">' +
+          '<span class="list-item-nama">' + m.namaMerchant + '</span>' +
+          '<span class="badge ' + badgeClassFor(m.status) + '">' + m.status + '</span>' +
+        '</div>' +
+        infoBaris +
+        '<div class="list-item-tgl">Update terakhir: ' + m.tanggalUpdate + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function tampilkanError(msg) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('errorState').style.display = 'block';
+}
+</script>
+</body>
+</html>
