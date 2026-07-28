@@ -330,17 +330,8 @@
 
     <!-- Konversi EDC to LVM -->
     <div class="card" id="cardEDCLVM" style="display:none;">
-      <div class="card-title">Progress Konversi EDC to LVM</div>
-      <div class="info-grid">
-        <div class="info-item full">
-          <span class="info-label">Merchant</span>
-          <span class="info-value" id="statMerchantEDCLVM">-</span>
-        </div>
-        <div class="info-item full">
-          <span class="info-label">Status Progress</span>
-          <span class="info-value" id="statStatusEDCLVM">-</span>
-        </div>
-      </div>
+      <div class="card-title">Progress Konversi EDC to LVM (<span id="jumlahEDCLVM">0</span> merchant)</div>
+      <div id="listEDCLVM"></div>
       <a id="linkPipelineCabang" href="#" class="btn btn-back" style="display:block;margin-top:16px;">
         Lihat Semua Pipeline Cabang Ini
       </a>
@@ -446,9 +437,19 @@ function tampilkanLaporan(d) {
     document.getElementById('infoMerchantLivinFood').style.display = 'block';
   }
 
-  if (d.namaMerchantEDCLVM && d.namaMerchantEDCLVM !== '-') {
-    document.getElementById('statMerchantEDCLVM').textContent = d.namaMerchantEDCLVM;
-    document.getElementById('statStatusEDCLVM').textContent = d.statusProgressEDCLVM || '-';
+  var updatesEDCLVM = d.updatesEDCLVM || [];
+  if (updatesEDCLVM.length) {
+    document.getElementById('jumlahEDCLVM').textContent = updatesEDCLVM.length;
+    document.getElementById('listEDCLVM').innerHTML = updatesEDCLVM.map(function(u) {
+      var midInfo = (u.status === 'Done Konversi to LVM' && u.mid && u.mid !== '-')
+        ? '<div class="info-label" style="margin-top:2px;">MID: ' + u.mid + '</div>' : '';
+      return '' +
+        '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);">' +
+          '<div class="info-value">' + u.namaMerchant + '</div>' +
+          '<div class="info-label" style="margin-top:2px;">' + u.status + '</div>' +
+          midInfo +
+        '</div>';
+    }).join('');
     document.getElementById('linkPipelineCabang').href = 'pipeline.html?kode=' + encodeURIComponent(d.kodeCabang);
     document.getElementById('cardEDCLVM').style.display = 'block';
   }
