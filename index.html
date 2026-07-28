@@ -407,6 +407,43 @@
       </div>
     </div>
 
+    <!-- Konversi EDC to LVM -->
+    <div class="card" id="cardEDCLVM" style="display:none;">
+      <div class="card-title-row">
+        <div class="card-title-icon">🔄</div>
+        <div class="card-title-text">
+          <span class="name">Konversi EDC to LVM <span class="opsional">· opsional</span></span>
+          <span class="card-title-underline"></span>
+        </div>
+      </div>
+
+      <div class="field" id="f-merchantedclvm">
+        <label>Pilih Merchant</label>
+        <div class="input-wrap">
+          <span class="input-icon">🏪</span>
+          <select id="namaMerchantEDCLVM">
+            <option value="">-- Tidak update hari ini --</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cabang-info" id="infoStatusEDCLVM">
+        📈 <span>Status saat ini: <span id="labelStatusEDCLVM"></span></span>
+      </div>
+
+      <div class="field" id="f-statusedclvm" style="margin-top:14px;display:none;">
+        <label>Update Status Progress</label>
+        <div class="input-wrap">
+          <span class="input-icon">📈</span>
+          <select id="statusProgressEDCLVM">
+            <option value="Proses">Proses</option>
+            <option value="Sudah LVM">Sudah LVM</option>
+            <option value="Done Akuisisi">Done Akuisisi</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <!-- Kendala & Keterangan -->
     <div class="card">
       <div class="card-title-row">
@@ -600,6 +637,54 @@ var MERCHANT_LIVIN = {
   'Area Makassar Ratulangi': ['Eksposed', 'Mas Daeng']
 };
 
+// ── Pipeline Konversi EDC to LVM ─────────────────────────────────
+function hideEDCLVMCard() {
+  var card = document.getElementById('cardEDCLVM');
+  if (card) {
+    card.style.display = 'none';
+    document.getElementById('namaMerchantEDCLVM').innerHTML = '<option value="">-- Tidak update hari ini --</option>';
+    document.getElementById('infoStatusEDCLVM').classList.remove('show');
+    document.getElementById('f-statusedclvm').style.display = 'none';
+  }
+}
+
+function updateEDCLVMCard(kode) {
+  var card = document.getElementById('cardEDCLVM');
+  if (!card || !kode) { hideEDCLVMCard(); return; }
+  fetch(APPS_SCRIPT_URL + '?action=getMerchantEDC&kodeCabang=' + encodeURIComponent(kode))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var merchants = data.merchants || [];
+      if (!merchants.length) { hideEDCLVMCard(); return; }
+      var sel = document.getElementById('namaMerchantEDCLVM');
+      sel.innerHTML = '<option value="">-- Tidak update hari ini --</option>' +
+        merchants.map(function(m) {
+          return '<option value="' + m.namaMerchant + '" data-status="' + m.status + '">' +
+                 m.namaMerchant + ' (' + m.status + ')</option>';
+        }).join('');
+      document.getElementById('infoStatusEDCLVM').classList.remove('show');
+      document.getElementById('f-statusedclvm').style.display = 'none';
+      card.style.display = 'block';
+    })
+    .catch(function() { hideEDCLVMCard(); });
+}
+
+document.getElementById('namaMerchantEDCLVM').addEventListener('change', function() {
+  var opt = this.options[this.selectedIndex];
+  var statusInfo  = document.getElementById('infoStatusEDCLVM');
+  var fieldStatus = document.getElementById('f-statusedclvm');
+  if (this.value) {
+    var statusSaatIni = (opt && opt.dataset.status) || 'Proses';
+    document.getElementById('labelStatusEDCLVM').textContent = statusSaatIni;
+    statusInfo.classList.add('show');
+    fieldStatus.style.display = 'block';
+    document.getElementById('statusProgressEDCLVM').value = statusSaatIni;
+  } else {
+    statusInfo.classList.remove('show');
+    fieldStatus.style.display = 'none';
+  }
+});
+
 function hideLivinFoodCard() {
   var card = document.getElementById('cardLivinFood');
   if (card) {
@@ -637,6 +722,7 @@ document.getElementById('selectArea').addEventListener('change', function() {
   document.getElementById('namaCabang').value = '';
   document.getElementById('areaValue').value = area;
   hideLivinFoodCard();
+  hideEDCLVMCard();
   if (!area) return;
   (DATA_CABANG[area] || []).forEach(function(c) {
     var o = document.createElement('option');
@@ -659,9 +745,11 @@ document.getElementById('selectCabang').addEventListener('change', function() {
     document.getElementById('infoCabang').classList.add('show');
     clearErr('f-cabang');
     updateLivinFoodCard(kode);
+    updateEDCLVMCard(kode);
   } else {
     document.getElementById('infoCabang').classList.remove('show');
     hideLivinFoodCard();
+    hideEDCLVMCard();
   }
 });
 
@@ -742,6 +830,10 @@ document.getElementById('formLaporan').addEventListener('submit', function(ev) {
     gapCakra            : document.getElementById('gapCakra').value || '0',
     namaMerchantLivinFood    : document.getElementById('namaMerchantLivinFood').value || '-',
     jumlahTransaksiLivinFood : document.getElementById('jumlahTransaksiLivinFood').value || '0',
+    namaMerchantEDCLVM   : document.getElementById('namaMerchantEDCLVM').value || '-',
+    statusProgressEDCLVM : document.getElementById('namaMerchantEDCLVM').value
+                            ? document.getElementById('statusProgressEDCLVM').value
+                            : '-',
     kendala         : document.getElementById('kendala').value.trim() || '-',
     keterangan      : document.getElementById('keterangan').value.trim() || '-'
   });
