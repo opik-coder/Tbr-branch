@@ -249,7 +249,7 @@
 
   <div id="loadingState">
     <div class="spinner"></div>
-    <div>Memuat data pipeline...</div>
+    <div id="loadingMsg">Memuat data pipeline...</div>
   </div>
 
   <div id="kontenPipeline" style="display:none;">
@@ -379,15 +379,37 @@ window.onload = function() {
   var url = APPS_SCRIPT_URL + '?action=getPipelineAll' +
     (KODE_FILTER ? '&kodeCabang=' + encodeURIComponent(KODE_FILTER) : '');
 
+  muatDataPipeline(url, 3);
+};
+
+// Sheet "Pipeline EDC to LVM" berisi ribuan baris, jadi setiap request
+// butuh beberapa detik untuk di-scan Apps Script — sesekali Google
+// membalas dengan halaman HTML (bukan JSON) kalau lagi sibuk/throttled.
+// Coba ulang otomatis beberapa kali sebelum benar-benar menampilkan error.
+function muatDataPipeline(url, sisaPercobaan) {
   fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
+    .then(function(r) { return r.text(); })
+    .then(function(teks) {
+      var res;
+      try {
+        res = JSON.parse(teks);
+      } catch (e) {
+        throw new Error('respons bukan JSON (server sedang sibuk)');
+      }
       if (res.error) { tampilkanError(res.error); return; }
       DATA_ALL = res.data || [];
       tampilkanData();
     })
-    .catch(function(err) { tampilkanError(err.message); });
-};
+    .catch(function(err) {
+      if (sisaPercobaan > 1) {
+        var msg = document.getElementById('loadingMsg');
+        if (msg) msg.textContent = 'Server sedang sibuk, mencoba lagi...';
+        setTimeout(function() { muatDataPipeline(url, sisaPercobaan - 1); }, 2000);
+        return;
+      }
+      tampilkanError('Gagal memuat data setelah beberapa percobaan: ' + err.message + '. Coba muat ulang halaman.');
+    });
+}
 
 function tampilkanData() {
   document.getElementById('loadingState').style.display = 'none';
