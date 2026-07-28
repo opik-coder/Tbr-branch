@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Akuisisi New Merchant — RTF Report</title>
+  <title>Laporan Akuisisi Harian — RTF Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    @keyframes spin { to { transform: rotate(360deg); } }
     body {
       font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, sans-serif;
       background: radial-gradient(1100px 620px at 50% 4%, #202f5e 0%, #131c3f 38%, #0a0f24 70%, #05070f 100%);
@@ -19,7 +18,8 @@
     }
 
     /* Top brand bar */
-    .topbar { display: flex; align-items: center; gap: 10px; padding: 20px 24px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; }
+    .topbar-brand { display: flex; align-items: center; gap: 10px; }
     .topbar-badge {
       display: inline-flex; align-items: center; justify-content: center;
       background: #2f5fe0; color: #fff; font-size: 11px; font-weight: 800;
@@ -27,393 +27,365 @@
     }
     .topbar-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 18px; color: #fff; line-height: 1.1; }
     .topbar-sub { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 2px; }
+    .topbar-nav {
+      font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,.75);
+      text-decoration: none; padding: 8px 16px; border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px; transition: background .2s, color .2s, border-color .2s;
+      white-space: nowrap;
+    }
+    .topbar-nav:hover { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.3); }
 
     .container { max-width: 560px; margin: 0 auto; padding: 8px 16px 44px; position: relative; z-index: 1; }
 
     .page-head { text-align: center; margin: 28px 0 24px; }
-    .breadcrumb { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: rgba(255,255,255,.4); margin-bottom: 10px; }
-    .page-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: 30px; letter-spacing: -.3px; color: #fff; margin-bottom: 8px; }
+    .breadcrumb { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: rgba(255,255,255,.4); margin-bottom: 10px; text-decoration: none; display: inline-block; }
+    .breadcrumb:hover { color: rgba(255,255,255,.7); }
+    .page-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: 28px; letter-spacing: -.3px; color: #fff; margin-bottom: 8px; }
     .page-subtitle { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.55); }
+    .id-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.16);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-top: 14px;
+      font-family: monospace;
+      color: rgba(255,255,255,.75);
+    }
 
     .card {
+      position: relative;
       background: rgba(255,255,255,.035);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,.09);
       border-radius: 20px;
-      padding: 26px 24px;
+      padding: 24px;
       margin-top: 16px;
       box-shadow: 0 20px 50px -24px rgba(0,0,0,.6);
     }
-    .card-title-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .card-title-row .name { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -.1px; }
-    .card-title-row .name .opsional { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.4); margin-left: 2px; }
-
-    .field { margin-bottom: 18px; }
-    .field:last-child { margin-bottom: 0; }
-    label {
-      display: block;
-      font-size: 12.5px;
-      font-weight: 700;
-      color: rgba(255,255,255,.85);
-      margin-bottom: 8px;
-    }
-    label .wajib { color: #ff8fa3; margin-left: 2px; }
-    input[type="text"], input[type="date"], input[type="number"],
-    select, textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: inherit;
-      font-weight: 500;
-      color: #fff;
-      background: rgba(255,255,255,.05);
-      transition: border-color 0.2s, box-shadow .2s, background 0.2s;
-      -webkit-appearance: none;
-      outline: none;
-    }
-    select { padding-right: 38px; appearance: none; cursor: pointer; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; }
-    select option { color: #1f2a44; }
-    input::placeholder, textarea::placeholder { color: rgba(255,255,255,.35); }
-    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) brightness(1.8); opacity: .55; cursor: pointer; }
-    input:focus, select:focus, textarea:focus {
-      border-color: rgba(255,255,255,.4);
-      background: rgba(255,255,255,.08);
-      box-shadow: 0 0 0 3px rgba(47,95,224,.25);
-    }
-    input:disabled, select:disabled {
-      background: rgba(255,255,255,.02);
-      color: rgba(255,255,255,.3);
-      cursor: not-allowed;
-    }
-    textarea { resize: vertical; min-height: 76px; font-weight: 500; font-size: 14px; }
-
-    .cabang-info {
-      align-items: center; gap: 8px;
-      margin-top: 9px;
-      padding: 10px 13px;
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 10px;
+    .card-title {
       font-size: 13px;
-      font-weight: 600;
-      color: rgba(255,255,255,.85);
-      display: none;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
     }
-    .cabang-info.show { display: flex; }
 
-    .field-row {
+    .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 14px;
     }
+    .info-item { display: flex; flex-direction: column; gap: 3px; }
+    .info-item.full { grid-column: 1 / -1; }
+    .info-label { font-size: 11px; color: rgba(255,255,255,.5); text-transform: uppercase; font-weight: 600; letter-spacing: .3px; }
+    .info-value { font-size: 15px; font-weight: 700; color: #fff; }
 
-    .total-box {
-      margin-top: 18px;
-      padding: 16px 18px;
-      border-radius: 14px;
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 10px;
+    }
+    .stat-box {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 14px 6px;
+      text-align: center;
+    }
+    .stat-box.highlight { background: rgba(47,95,224,.12); border-color: rgba(47,95,224,.4); }
+    .stat-number { font-size: 22px; font-weight: 800; line-height: 1; color: #fff; }
+    .stat-box.highlight .stat-number { color: #8faaf5; }
+    .stat-label { font-size: 10px; color: rgba(255,255,255,.55); font-weight: 600; margin-top: 5px; line-height: 1.3; }
+
+    .total-row {
+      margin-top: 14px;
+      padding: 16px;
       background: rgba(47,95,224,.12);
       border: 1px solid rgba(47,95,224,.4);
-      display: flex; align-items: center; justify-content: space-between;
+      border-radius: 14px;
+      text-align: center;
     }
-    .total-box .label { font-size: 12px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: rgba(255,255,255,.85); }
-    .total-box .sub { font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,.5); margin-top: 2px; }
-    .total-box .value { font-size: 36px; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -1px; }
+    .total-row span { font-size: 13px; color: rgba(255,255,255,.7); }
+    .total-row strong { font-size: 22px; font-weight: 800; color: #fff; margin-left: 8px; }
 
-    .divider {
-      height: 1px;
-      background: rgba(255,255,255,.08);
-      margin: 20px 0;
+    .note-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
     }
+    .note-box.kendala { background: rgba(255,143,163,.08); border: 1px solid rgba(255,143,163,.3); }
+    .note-box.keterangan { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); }
+    .note-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,.55); margin-bottom: 4px; }
 
-    .form-actions {
-      margin-top: 24px;
+    .wa-box {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 13.5px;
+      line-height: 1.8;
+      color: rgba(255,255,255,.85);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+      cursor: pointer;
+      user-select: all;
+      transition: background 0.2s;
+    }
+    .wa-box:hover { background: rgba(255,255,255,.07); }
+
+    .btn-group { display: flex; flex-direction: column; gap: 10px; }
+    .btn {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    .btn-cancel {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: rgba(255,255,255,.85);
-      text-decoration: underline;
-      cursor: pointer;
-      background: none;
-      border: none;
-      font-family: inherit;
-    }
-    .btn-cancel:hover { color: #fff; }
-    .btn-submit {
-      padding: 13px 26px;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #4472ef, #2b4fd6);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      box-shadow: 0 14px 30px -12px rgba(43,79,214,.7);
-      transition: transform .12s, box-shadow .2s, background .2s;
-    }
-    .btn-submit:hover { transform: translateY(-1px); background: linear-gradient(135deg, #557bf2, #3459e0); }
-    .btn-submit:active { transform: scale(0.98); }
-    .btn-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-
-    #loadingOverlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(5,7,15,.7);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      z-index: 999;
-      align-items: center;
       justify-content: center;
-      flex-direction: column;
-      gap: 18px;
-      color: white;
+      gap: 8px;
+      padding: 13px 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.14);
       font-size: 14px;
       font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform .12s, background .2s, box-shadow .2s;
     }
-    #loadingOverlay.show { display: flex; }
+    .btn:active { transform: scale(0.98); }
+    .btn-copy { background: linear-gradient(135deg, #4472ef, #2b4fd6); color: #fff; border-color: transparent; box-shadow: 0 14px 30px -14px rgba(43,79,214,.7); }
+    .btn-copy:hover { background: linear-gradient(135deg, #557bf2, #3459e0); }
+    .btn-wa { background: rgba(37,211,102,.15); color: #fff; border-color: rgba(37,211,102,.4); }
+    .btn-wa:hover { background: rgba(37,211,102,.25); }
+    .btn-back { background: rgba(255,255,255,.05); color: rgba(255,255,255,.85); }
+    .btn-back:hover { background: rgba(255,255,255,.09); }
+    .btn-hint { font-size: 11px; color: rgba(255,255,255,.4); text-align: center; margin-top: -2px; }
+
+    #toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(10,14,30,.92);
+      border: 1px solid rgba(255,255,255,.14);
+      color: white;
+      padding: 11px 22px; border-radius: 24px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+      transition: transform 0.3s; z-index: 1000;
+      pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Loading state */
+    #loadingState {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,.7);
+    }
     .spinner {
-      width: 46px; height: 46px;
+      width: 44px; height: 44px;
       border: 4px solid rgba(255,255,255,.15);
       border-top-color: #4472ef;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .error-msg { color: #ff8fa3; font-size: 12px; font-weight: 600; margin-top: 6px; display: none; }
-    .error-msg.show { display: block; }
-    .field-invalid input, .field-invalid select { border-color: #ff8fa3 !important; }
-
-    .footer {
-      text-align: center;
-      padding: 40px 16px 4px;
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(255,255,255,.4);
-    }
+    .footer { text-align: center; padding: 40px 16px 4px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.4); }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div>Menyimpan laporan...</div>
-</div>
-
 <div class="topbar">
-  <span class="topbar-badge">R10</span>
-  <div>
-    <div class="topbar-title">RTF Report</div>
-    <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
+  <div class="topbar-brand">
+    <span class="topbar-badge">R10</span>
+    <div>
+      <div class="topbar-title">RTF Report</div>
+      <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
+    </div>
   </div>
+  <a class="topbar-nav" href="pipeline.html">Pipeline →</a>
 </div>
 
 <div class="container">
-  <div class="page-head">
-    <div class="breadcrumb">← Transaction</div>
-    <h1 class="page-title">Akuisisi New Merchant</h1>
-    <div class="page-subtitle">Isi laporan akuisisi merchant baru per cabang</div>
+
+  <!-- Loading state awal -->
+  <div id="loadingState">
+    <div class="spinner"></div>
+    <div>Memuat data laporan...</div>
   </div>
 
-  <form id="formLaporan" novalidate>
+  <!-- Konten laporan (disembunyikan dulu) -->
+  <div id="kontenLaporan" style="display:none;">
 
-    <!-- Tanggal & Cabang -->
-    <div class="card">
-      <div class="card-title-row">
-        <span class="name">Data Laporan</span>
-      </div>
-
-      <div class="field" id="f-tanggal">
-        <label>Tanggal Laporan <span class="wajib">*</span></label>
-        <input type="date" id="tanggalLaporan" required>
-        <div class="error-msg">Tanggal wajib diisi.</div>
-      </div>
-
-      <div class="field-row">
-        <div class="field" id="f-area">
-          <label>Area <span class="wajib">*</span></label>
-          <select id="selectArea" required>
-            <option value="">-- Pilih Area --</option>
-          </select>
-          <div class="error-msg">Area wajib dipilih.</div>
-        </div>
-
-        <div class="field" id="f-cabang">
-          <label>Cabang <span class="wajib">*</span></label>
-          <select id="selectCabang" disabled required>
-            <option value="">-- Pilih Area dahulu --</option>
-          </select>
-          <div class="error-msg">Cabang wajib dipilih.</div>
-        </div>
-      </div>
-      <div class="cabang-info" id="infoCabang">
-        <span id="labelCabang"></span>
-      </div>
-
-      <input type="hidden" id="kodeCabang">
-      <input type="hidden" id="namaCabang">
-      <input type="hidden" id="areaValue">
+    <div class="page-head">
+      <a class="breadcrumb" href="index.html">← Isi Laporan Baru</a>
+      <h1 class="page-title">Laporan Akuisisi Harian</h1>
+      <div class="page-subtitle">Laporan siap dikirim ke WhatsApp</div>
+      <div class="id-badge" id="badgeID">ID: -</div>
     </div>
 
-    <!-- Akuisisi -->
+    <!-- Data Cabang -->
     <div class="card">
-      <div class="card-title-row">
-        <span class="name">Hasil Akuisisi</span>
+      <div class="card-title">Data Cabang</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Tanggal</span>
+          <span class="info-value" id="infoTanggal">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Area</span>
+          <span class="info-value" id="infoArea">-</span>
+        </div>
+        <div class="info-item full">
+          <span class="info-label">Nama Cabang</span>
+          <span class="info-value" id="infoCabang">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Kode Cabang</span>
+          <span class="info-value" id="infoKode">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistik -->
+    <div class="card">
+      <div class="card-title">Hasil Akuisisi &amp; Pemasangan</div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-number" id="statLVM">0</div>
+          <div class="stat-label">Akuisisi LVM</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="statEDC">0</div>
+          <div class="stat-label">Akuisisi EDC</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="statEDCPOT">0</div>
+          <div class="stat-label">Akuisisi EDC POT</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="statPLVM">0</div>
+          <div class="stat-label">Pemasangan LVM</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="statREDC">0</div>
+          <div class="stat-label">Retensi EDC</div>
+        </div>
+      </div>
+      <div class="total-row">
+        <span>Total Akuisisi:</span>
+        <strong id="statTotal">0</strong>
       </div>
 
-      <div class="field-row">
-        <div class="field" id="f-lvm">
-          <label>Jumlah Akuisisi LVM <span class="wajib">*</span></label>
-          <input type="number" id="jumlahLVM" placeholder="0" min="0" value="0" required>
-          <div class="error-msg">Wajib diisi.</div>
-        </div>
-        <div class="field" id="f-edc">
-          <label>Jumlah Akuisisi EDC <span class="wajib">*</span></label>
-          <input type="number" id="jumlahEDC" placeholder="0" min="0" value="0" required>
-          <div class="error-msg">Wajib diisi.</div>
-        </div>
+      <div id="boxKendala" class="note-box kendala" style="display:none;">
+        <div class="note-label">Kendala</div>
+        <div id="infoKendala"></div>
       </div>
-
-      <div class="field" id="f-edcpot" style="margin-top:18px;">
-        <label>Jumlah Akuisisi EDC POT <span class="wajib">*</span></label>
-        <input type="number" id="jumlahEDCPOT" placeholder="0" min="0" value="0" required>
-        <div class="error-msg">Wajib diisi.</div>
-      </div>
-
-      <div class="total-box">
-        <div>
-          <div class="label">Total Akuisisi</div>
-          <div class="sub">LVM + EDC + EDC POT</div>
-        </div>
-        <div class="value" id="totalAkuisisi">0</div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="field-row">
-        <div class="field" id="f-plvm">
-          <label>Pemasangan LVM <span class="wajib">*</span></label>
-          <input type="number" id="jumlahPemasanganLVM" placeholder="0" min="0" value="0" required>
-          <div class="error-msg">Wajib diisi.</div>
-        </div>
-        <div class="field" id="f-redc">
-          <label>Retensi EDC <span class="wajib">*</span></label>
-          <input type="number" id="jumlahRetensiEDC" placeholder="0" min="0" value="0" required>
-          <div class="error-msg">Wajib diisi.</div>
-        </div>
+      <div id="boxKeterangan" class="note-box keterangan" style="display:none;">
+        <div class="note-label">Keterangan</div>
+        <div id="infoKeterangan"></div>
       </div>
     </div>
 
     <!-- Data Cakra -->
     <div class="card">
-      <div class="card-title-row">
-        <span class="name">Data Cakra</span>
-      </div>
-
-      <div class="field-row">
-        <div class="field" id="f-leadscakra">
-          <label>Total Leads Cakra <span class="wajib">*</span></label>
-          <input type="number" id="totalLeadsCakra" placeholder="0" min="0" value="0" required>
-          <div class="error-msg">Wajib diisi.</div>
+      <div class="card-title">Data Cakra</div>
+      <div class="stats-row">
+        <div class="stat-box highlight">
+          <div class="stat-number" id="statLeadsCakra">0</div>
+          <div class="stat-label">Total Leads Cakra</div>
         </div>
-        <div class="field" id="f-kunjungancakra">
-          <label>Total Kunjungan Cakra <span class="wajib">*</span></label>
-          <input type="number" id="totalKunjunganCakra" placeholder="0" min="0" value="0" required>
-          <div class="error-msg">Wajib diisi.</div>
+        <div class="stat-box highlight">
+          <div class="stat-number" id="statKunjunganCakra">0</div>
+          <div class="stat-label">Total Kunjungan Cakra</div>
         </div>
-      </div>
-
-      <div class="field" id="f-gapcakra" style="margin-top:18px;">
-        <label>Gap (sesuai Cakra) <span class="wajib">*</span></label>
-        <input type="number" id="gapCakra" placeholder="0" value="0" required>
-        <div class="error-msg">Wajib diisi.</div>
+        <div class="stat-box highlight">
+          <div class="stat-number" id="statGapCakra">0</div>
+          <div class="stat-label">Gap (sesuai Cakra)</div>
+        </div>
       </div>
     </div>
 
     <!-- Livin' Food -->
-    <div class="card" id="cardLivinFood" style="display:none;">
-      <div class="card-title-row">
-        <span class="name">Livin' Food</span>
+    <div class="card">
+      <div class="card-title">Livin' Food</div>
+      <div id="infoMerchantLivinFood" style="display:none;margin-bottom:12px;">
+        <div class="info-label">Merchant</div>
+        <div class="info-value" id="statMerchantLivinFood" style="color:#8faaf5;margin-top:2px;">-</div>
       </div>
-
-      <div class="field" id="f-merchantlivinfood">
-        <label>Nama Merchant <span class="wajib">*</span></label>
-        <select id="namaMerchantLivinFood" required>
-          <option value="">-- Pilih Merchant --</option>
-        </select>
-        <div class="error-msg">Wajib dipilih.</div>
-      </div>
-
-      <div class="field" id="f-livinfood" style="margin-top:14px;">
-        <label>Jumlah Transaksi Livin' Food <span class="wajib">*</span></label>
-        <input type="number" id="jumlahTransaksiLivinFood" placeholder="0" min="0" value="0" required>
-        <div class="error-msg">Wajib diisi.</div>
+      <div class="stats-row">
+        <div class="stat-box highlight">
+          <div class="stat-number" id="statLivinFood">0</div>
+          <div class="stat-label">Jumlah Transaksi Livin' Food</div>
+        </div>
       </div>
     </div>
 
     <!-- Konversi EDC to LVM -->
     <div class="card" id="cardEDCLVM" style="display:none;">
-      <div class="card-title-row">
-        <span class="name">Konversi EDC to LVM <span class="opsional">· opsional</span></span>
+      <div class="card-title">Progress Konversi EDC to LVM</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <span class="info-label">Merchant</span>
+          <span class="info-value" id="statMerchantEDCLVM">-</span>
+        </div>
+        <div class="info-item full">
+          <span class="info-label">Status Progress</span>
+          <span class="info-value" id="statStatusEDCLVM">-</span>
+        </div>
       </div>
-
-      <div class="field" id="f-merchantedclvm">
-        <label>Pilih Merchant</label>
-        <select id="namaMerchantEDCLVM">
-          <option value="">-- Tidak update hari ini --</option>
-        </select>
-      </div>
-
-      <div class="cabang-info" id="infoStatusEDCLVM">
-        <span>Status saat ini: <span id="labelStatusEDCLVM"></span></span>
-      </div>
-
-      <div class="field" id="f-statusedclvm" style="margin-top:14px;display:none;">
-        <label>Update Status Progress</label>
-        <select id="statusProgressEDCLVM">
-          <option value="Proses">Proses</option>
-          <option value="Sudah LVM">Sudah LVM</option>
-          <option value="Done Akuisisi">Done Akuisisi</option>
-        </select>
-      </div>
+      <a id="linkPipelineCabang" href="#" class="btn btn-back" style="display:block;margin-top:16px;">
+        Lihat Semua Pipeline Cabang Ini
+      </a>
     </div>
 
-    <!-- Kendala & Keterangan -->
+    <!-- Teks WA -->
     <div class="card">
-      <div class="card-title-row">
-        <span class="name">Kendala &amp; Keterangan <span class="opsional">· opsional</span></span>
-      </div>
+      <div class="card-title">Format Laporan WhatsApp</div>
+      <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;">Klik teks atau tombol <strong>Copy</strong> untuk menyalin.</p>
+      <div class="wa-box" id="teksWA" onclick="copyLaporan()"></div>
+    </div>
 
-      <div class="field">
-        <label>Kendala <span style="color:rgba(255,255,255,.4); font-weight:500;">(jika ada)</span></label>
-        <textarea id="kendala" placeholder="Kosongkan jika tidak ada kendala"></textarea>
-      </div>
-      <div class="field">
-        <label>Keterangan Tambahan <span style="color:rgba(255,255,255,.4); font-weight:500;">(jika ada)</span></label>
-        <textarea id="keterangan" placeholder="Informasi tambahan (jika ada)"></textarea>
+    <!-- Tombol -->
+    <div class="card">
+      <div class="card-title">Kirim Laporan</div>
+      <div class="btn-group">
+        <button class="btn btn-copy" onclick="copyLaporan()">Copy Laporan</button>
+        <a class="btn btn-wa" id="btnWA" href="#" target="_blank">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Buka WhatsApp
+        </a>
+        <p class="btn-hint">WhatsApp terbuka dengan teks sudah terisi — pilih Grup lalu kirim.</p>
+        <a class="btn btn-back" href="index.html">Isi Laporan Baru</a>
       </div>
     </div>
 
-    <!-- Submit -->
-    <div class="form-actions">
-      <a class="btn-cancel" onclick="history.back()">Batal</a>
-      <button type="submit" class="btn-submit" id="btnSubmit">Submit Laporan</button>
+    <div class="footer">
+      ID: <span id="footerID">-</span><br>
+      <span>Copyright &copy; 2026 RTF Team</span>
     </div>
-
-  </form>
-
-  <div class="footer">
-    Copyright &copy; 2026 RTF Team
   </div>
+
+  <!-- Error state -->
+  <div id="errorState" style="display:none;">
+    <div class="page-head" style="margin-top:60px;">
+      <div style="font-size:44px;margin-bottom:16px;">⚠</div>
+      <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin-bottom:8px;color:#fff;">Laporan Tidak Ditemukan</h2>
+      <p style="color:rgba(255,255,255,.55);font-size:13.5px;margin-bottom:24px;" id="errorMsg">ID laporan tidak valid atau belum tersimpan.</p>
+      <a href="index.html" class="btn btn-copy" style="display:inline-flex;padding:12px 26px;">Kembali ke Form</a>
+    </div>
+  </div>
+
 </div>
+
+<div id="toast">Teks berhasil disalin!</div>
 
 <script>
 // ================================================================
@@ -422,374 +394,117 @@
 var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl4SiO8CeyYrF4vDwmx5D0n8qjcq3Vk5HHwFt56grTdyouKEyOAmiB6-vKurKTXS9U/exec";
 // ================================================================
 
-// ── Data Master Cabang ──────────────────────────────────────────
-var DATA_CABANG = {
-  "Area Manado": [
-    {kode:"15000",nama:"KC Manado Dotulolong Lasut"},{kode:"15001",nama:"KCP Manado Toar"},
-    {kode:"15002",nama:"KC Kotamobagu"},{kode:"15003",nama:"KC Bitung"},
-    {kode:"15004",nama:"KC Gorontalo"},{kode:"15005",nama:"KC Tahuna"},
-    {kode:"15006",nama:"KCP Manado Sam Ratulangi"},{kode:"15007",nama:"KCP Manado Sudirman"},
-    {kode:"15008",nama:"KCP Limboto"},{kode:"15010",nama:"KCP Manado Boulevard"},
-    {kode:"15011",nama:"KCP Marisa"},{kode:"15012",nama:"KCP Tomohon"},
-    {kode:"15015",nama:"KCP Amurang"},{kode:"15017",nama:"KCP Manado Bahu"},
-    {kode:"15018",nama:"KCP Manado Pasar Calaca"},{kode:"15019",nama:"KCP Girian"},
-    {kode:"15020",nama:"KCP Manado Paal Dua"},{kode:"15021",nama:"KCP Airmadidi"},
-    {kode:"15022",nama:"KCP Manado Town Square 3"},{kode:"15075",nama:"KCP Manado Airmadidi"},
-    {kode:"15076",nama:"KCP Manado Ratahan"},{kode:"15078",nama:"KCP Gorontalo Kwandang"},
-    {kode:"15079",nama:"KCP Paguyaman"},{kode:"15081",nama:"KCP Manado Paniki"},
-    {kode:"15082",nama:"KCP Manado Langowan"},{kode:"15083",nama:"KCP Gorontalo Agus Salim"},
-    {kode:"15085",nama:"KCP Tilamuta"},{kode:"15086",nama:"KCP Tondano"},
-    {kode:"15088",nama:"KCP Gorontalo Isimu"},{kode:"15089",nama:"KCP Manado Ringroad"},
-    {kode:"15090",nama:"KCP Bone Bolango Kabila"},{kode:"15091",nama:"KCP Siau"},
-    {kode:"15096",nama:"KCP Boalemo Wonosari"},{kode:"15097",nama:"KCP Lolak"}
-  ],
-  "Area Palu": [
-    {kode:"15100",nama:"KC Palu Sam Ratulangi"},{kode:"15101",nama:"KCP Palu Imam Bonjol"},
-    {kode:"15102",nama:"KCP Palu Hasanuddin"},{kode:"15103",nama:"KCP Donggala"},
-    {kode:"15104",nama:"KC Luwuk"},{kode:"15105",nama:"KCP Poso"},
-    {kode:"15106",nama:"KC Toli Toli"},{kode:"15107",nama:"KCP Parigi"},
-    {kode:"15109",nama:"KCP Ampana"},{kode:"15110",nama:"KCP Palu Basuki Rahmat"},
-    {kode:"15111",nama:"KCP Morowali Bahodopi"},{kode:"15112",nama:"KCP Tawaeli"},
-    {kode:"15175",nama:"KCP Pasangkayu"},{kode:"15177",nama:"KCP Toili"},
-    {kode:"15178",nama:"KCP Palu Moh Yamin"},{kode:"15179",nama:"KCP Palu Dewi Sartika"},
-    {kode:"15180",nama:"KCP Tentena"},{kode:"15181",nama:"KCP Kotaraya"},
-    {kode:"15182",nama:"KCP Buol"},{kode:"15184",nama:"KCP Parigi Tolai"},
-    {kode:"15185",nama:"KCP Banggai Bunta"},{kode:"15186",nama:"KCP Banggai Laut"},
-    {kode:"15187",nama:"KCP Morowali Beteleme"},{kode:"15188",nama:"KCP Toli Toli Soni"},
-    {kode:"15189",nama:"KCP Morowali Bungku"},{kode:"15190",nama:"KCP Banggai Kepulauan"},
-    {kode:"15191",nama:"KCP Sigi"}
-  ],
-  "Area Makassar Kartini": [
-    {kode:"15200",nama:"KC Makassar Kartini"},{kode:"15201",nama:"KCP Makassar Sulawesi"},
-    {kode:"15202",nama:"KCP Makassar Cokroaminoto"},{kode:"15203",nama:"KCP Semen Tonasa"},
-    {kode:"15213",nama:"KCP Makassar Slamet Riyadi"},{kode:"15216",nama:"KCP Makassar Daya"},
-    {kode:"15220",nama:"KCP Makassar Andalas"},{kode:"15221",nama:"KCP Makassar Veteran"},
-    {kode:"15225",nama:"KCP Makassar R.S. Stella Maris"},{kode:"15237",nama:"KCP Makassar Universitas Hasanuddin"},
-    {kode:"15238",nama:"KCP Makassar Pelabuhan Indonesia"},{kode:"15242",nama:"KCP Makassar Pasar Sentral"},
-    {kode:"15243",nama:"KCP Makassar Sombaopu"},{kode:"15244",nama:"KCP Pangkep Hasanuddin"},
-    {kode:"15245",nama:"KCP Makassar Pusat Grosir Daya"},{kode:"15246",nama:"KCP Makassar Perintis Kemerdekaan"},
-    {kode:"15248",nama:"KCP Maros Sudirman"},{kode:"15249",nama:"KCP Makassar Urip Sumoharjo"},
-    {kode:"15250",nama:"KCP Makassar Monginsidi"},{kode:"15251",nama:"KCP Makassar CPI"},
-    {kode:"15252",nama:"KCP Makassar Latimojong"},{kode:"15269",nama:"KCP Maros Camba"},
-    {kode:"15271",nama:"KCP Makassar Pannampu"},{kode:"15291",nama:"KCP Makassar BTP"},
-    {kode:"15293",nama:"KCP Makassar Paccerakkang"},{kode:"15297",nama:"KCP Makassar Sudiang"}
-  ],
-  "Area Kendari": [
-    {kode:"16200",nama:"KC Kendari Mesjid Agung"},{kode:"16201",nama:"KCP Kendari Beach"},
-    {kode:"16202",nama:"KCP Bau Bau"},{kode:"16203",nama:"KC Pomalaa"},
-    {kode:"16204",nama:"KCP Kolaka"},{kode:"16205",nama:"KCP Wua Wua"},
-    {kode:"16206",nama:"KCP Kolaka Utara"},{kode:"16207",nama:"KCP Kendari Bundaran Anduonohu"},
-    {kode:"16208",nama:"KCP Kendari Lepo-Lepo"},{kode:"16210",nama:"KCP Morosi"},
-    {kode:"16275",nama:"KCP Kendari Andunouhu"},{kode:"16276",nama:"KCP Tinanggea"},
-    {kode:"16277",nama:"KCP Pasarwajo"},{kode:"16278",nama:"KCP Molawe"},
-    {kode:"16279",nama:"KCP Raha"},{kode:"16280",nama:"KCP Bombana"},
-    {kode:"16281",nama:"KCP Unaaha"},{kode:"16282",nama:"KCP Buton Lombe"},
-    {kode:"16283",nama:"KCP Baubau Wolio"},{kode:"16284",nama:"KCP Rate Rate"},
-    {kode:"16285",nama:"KCP Lapai"}
-  ],
-  "Area Pare Pare": [
-    {kode:"17000",nama:"KC Pare Pare"},{kode:"17001",nama:"KCP Pinrang"},
-    {kode:"17002",nama:"KCP Polewali Mandar"},{kode:"17003",nama:"KCP Pare-Pare Pattompo"},
-    {kode:"17004",nama:"KCP Mamuju"},{kode:"17005",nama:"KC Watampone"},
-    {kode:"17006",nama:"KCP Sengkang"},{kode:"17007",nama:"KC Palopo"},
-    {kode:"17008",nama:"KCP Rantepao"},{kode:"17009",nama:"KC Soroako"},
-    {kode:"17010",nama:"KCP Sidrap Sudirman"},{kode:"17011",nama:"KCP Sinjai Pasar Sentral"},
-    {kode:"17015",nama:"KCP Kahu"},{kode:"17016",nama:"KCP Majene"},
-    {kode:"17075",nama:"KCP Topoyo"},{kode:"17076",nama:"KCP Sidrap"},
-    {kode:"17077",nama:"KCP Siwa"},{kode:"17078",nama:"KCP Soppeng"},
-    {kode:"17079",nama:"KCP Belopa"},{kode:"17080",nama:"KCP Masamba"},
-    {kode:"17082",nama:"KCP Barru"},{kode:"17083",nama:"KCP Tomoni"},
-    {kode:"17084",nama:"KCP Malili"},{kode:"17085",nama:"KCP Polewali Mandar Pekkabata"},
-    {kode:"17087",nama:"KCP Toraja Makale"},{kode:"17088",nama:"KCP Enrekang Pasar Sudu"},
-    {kode:"17091",nama:"KCP Bone Bone"}
-  ],
-  "Area Makassar Ratulangi": [
-    {kode:"17400",nama:"KC Makassar Sam Ratulangi"},{kode:"17401",nama:"KCP Makassar Panakkukang"},
-    {kode:"17402",nama:"KCP Makassar Hertasning"},{kode:"17403",nama:"KCP Sungguminasa"},
-    {kode:"17404",nama:"KCP Makassar Cendrawasih"},{kode:"17406",nama:"KCP Makassar Toddopuli"},
-    {kode:"17407",nama:"KCP Bulukumba"},{kode:"17408",nama:"KCP Makassar Pettarani"},
-    {kode:"17409",nama:"KCP Makassar Veteran Selatan"},{kode:"17410",nama:"KCP Bantaeng Pahlawan"},
-    {kode:"17411",nama:"KCP Jeneponto"},{kode:"17451",nama:"KCP Selayar"},
-    {kode:"17452",nama:"KCP Gowa Malino"},{kode:"17453",nama:"KCP Bantaeng Tanetea"},
-    {kode:"17454",nama:"KCP Takalar"},{kode:"17455",nama:"KCP Limbung"},
-    {kode:"17456",nama:"KCP Hartaco"},{kode:"17457",nama:"KCP Antang"},
-    {kode:"17458",nama:"KCP Gowa Pallangga"},{kode:"17459",nama:"KCP Gowa Balang-Balang"},
-    {kode:"17462",nama:"KCP Bulukumba Tanete"},{kode:"17463",nama:"KCP Barombong"}
-  ],
-  "Area Maluku": [
-    {kode:"18600",nama:"KC Ambon Pantai Mardika"},{kode:"18601",nama:"KC Ambon Pattimura"},
-    {kode:"18602",nama:"KC Ternate"},{kode:"18603",nama:"KCP Ambon Paso"},
-    {kode:"18604",nama:"KCP Ambon Masohi"},{kode:"18605",nama:"KCP Ambon Namlea"},
-    {kode:"18607",nama:"KCP Maluku Tenggara"},{kode:"18608",nama:"KCP Ternate Pahlawan Revolusi"},
-    {kode:"18609",nama:"KCP Buli"},{kode:"18610",nama:"KCP Tobelo"},
-    {kode:"18611",nama:"KCP Sofifi"},{kode:"18612",nama:"KCP Ambon Universitas Pattimura"},
-    {kode:"18613",nama:"KCP Indonesia Weda Bay Industrial Park"},{kode:"18651",nama:"KCP Bula"},
-    {kode:"18652",nama:"KCP Gemba"},{kode:"18654",nama:"KCP Waeapo"},
-    {kode:"18655",nama:"KCP Wayame"},{kode:"18656",nama:"KCP Saumlaki"},
-    {kode:"18657",nama:"KCP Ternate Bastiong"},{kode:"18658",nama:"KCP Labuha"},
-    {kode:"18659",nama:"KCP Weda"},{kode:"18660",nama:"KCP Jailolo"},
-    {kode:"18661",nama:"KCP Obi"}
-  ]
-};
+var TEKS_WA = '';
 
-// ── Init ────────────────────────────────────────────────────────
 window.onload = function() {
-  // Set tanggal hari ini
-  var d = new Date();
-  document.getElementById('tanggalLaporan').value =
-    d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  var params = new URLSearchParams(window.location.search);
+  var id = params.get('id');
 
-  // Isi dropdown Area
-  var sel = document.getElementById('selectArea');
-  Object.keys(DATA_CABANG).sort().forEach(function(area) {
-    var o = document.createElement('option');
-    o.value = area; o.textContent = area;
-    sel.appendChild(o);
-  });
-
-  // Live update total
-  ['jumlahLVM','jumlahEDC','jumlahEDCPOT'].forEach(function(id) {
-    document.getElementById(id).addEventListener('input', updateTotal);
-  });
-};
-
-// ── Data Merchant per Area ───────────────────────────────────────
-// ── Kode cabang eligible Livin' Food ────────────────────────────
-var LIVIN_FOOD_ELIGIBLE = {
-  // Area Makassar Kartini
-  '15200':true,'15201':true,'15202':true,'15213':true,'15216':true,
-  '15220':true,'15221':true,'15225':true,'15237':true,'15238':true,
-  '15242':true,'15243':true,'15245':true,'15246':true,'15249':true,
-  '15250':true,'15251':true,'15252':true,'15271':true,'15291':true,
-  '15293':true,'15297':true,
-  // Area Makassar Ratulangi
-  '17400':true,'17401':true,'17402':true,'17403':true,'17404':true,
-  '17406':true,'17407':true,'17408':true,'17409':true,'17410':true,
-  '17411':true,'17452':true,'17453':true,'17454':true,'17455':true,
-  '17456':true,'17457':true,'17458':true,'17459':true,'17463':true
-};
-
-var MERCHANT_LIVIN = {
-  'Area Makassar Kartini':   ['Konijiwa', 'Coto Dg Tayang', 'Darikopi'],
-  'Area Makassar Ratulangi': ['Eksposed', 'Mas Daeng']
-};
-
-// ── Pipeline Konversi EDC to LVM ─────────────────────────────────
-function hideEDCLVMCard() {
-  var card = document.getElementById('cardEDCLVM');
-  if (card) {
-    card.style.display = 'none';
-    document.getElementById('namaMerchantEDCLVM').innerHTML = '<option value="">-- Tidak update hari ini --</option>';
-    document.getElementById('infoStatusEDCLVM').classList.remove('show');
-    document.getElementById('f-statusedclvm').style.display = 'none';
-  }
-}
-
-function updateEDCLVMCard(kode) {
-  var card = document.getElementById('cardEDCLVM');
-  if (!card || !kode) { hideEDCLVMCard(); return; }
-  fetch(APPS_SCRIPT_URL + '?action=getMerchantEDC&kodeCabang=' + encodeURIComponent(kode))
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var merchants = data.merchants || [];
-      if (!merchants.length) { hideEDCLVMCard(); return; }
-      var sel = document.getElementById('namaMerchantEDCLVM');
-      sel.innerHTML = '<option value="">-- Tidak update hari ini --</option>' +
-        merchants.map(function(m) {
-          return '<option value="' + m.namaMerchant + '" data-status="' + m.status + '">' +
-                 m.namaMerchant + ' (' + m.status + ')</option>';
-        }).join('');
-      document.getElementById('infoStatusEDCLVM').classList.remove('show');
-      document.getElementById('f-statusedclvm').style.display = 'none';
-      card.style.display = 'block';
-    })
-    .catch(function() { hideEDCLVMCard(); });
-}
-
-document.getElementById('namaMerchantEDCLVM').addEventListener('change', function() {
-  var opt = this.options[this.selectedIndex];
-  var statusInfo  = document.getElementById('infoStatusEDCLVM');
-  var fieldStatus = document.getElementById('f-statusedclvm');
-  if (this.value) {
-    var statusSaatIni = (opt && opt.dataset.status) || 'Proses';
-    document.getElementById('labelStatusEDCLVM').textContent = statusSaatIni;
-    statusInfo.classList.add('show');
-    fieldStatus.style.display = 'block';
-    document.getElementById('statusProgressEDCLVM').value = statusSaatIni;
-  } else {
-    statusInfo.classList.remove('show');
-    fieldStatus.style.display = 'none';
-  }
-});
-
-function hideLivinFoodCard() {
-  var card = document.getElementById('cardLivinFood');
-  if (card) {
-    card.style.display = 'none';
-    document.getElementById('jumlahTransaksiLivinFood').value = '0';
-    document.getElementById('namaMerchantLivinFood').innerHTML = '<option value="">-- Pilih Merchant --</option>';
-  }
-}
-
-function updateLivinFoodCard(kode) {
-  var card = document.getElementById('cardLivinFood');
-  if (!card) return;
-  var area = document.getElementById('areaValue').value;
-  if (LIVIN_FOOD_ELIGIBLE[kode]) {
-    // Isi dropdown merchant sesuai area
-    var sel = document.getElementById('namaMerchantLivinFood');
-    var merchants = MERCHANT_LIVIN[area] || [];
-    sel.innerHTML = '<option value="">-- Pilih Merchant --</option>' +
-      '<option value="Tidak Ada">Tidak Ada</option>' +
-      merchants.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('');
-    card.style.display = 'block';
-  } else {
-    hideLivinFoodCard();
-  }
-}
-
-// ── Cascade: Area → Cabang ──────────────────────────────────────
-document.getElementById('selectArea').addEventListener('change', function() {
-  var area = this.value;
-  var sc = document.getElementById('selectCabang');
-  sc.innerHTML = '<option value="">-- Pilih Cabang --</option>';
-  sc.disabled = !area;
-  document.getElementById('infoCabang').classList.remove('show');
-  document.getElementById('kodeCabang').value = '';
-  document.getElementById('namaCabang').value = '';
-  document.getElementById('areaValue').value = area;
-  hideLivinFoodCard();
-  hideEDCLVMCard();
-  if (!area) return;
-  (DATA_CABANG[area] || []).forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c.kode;
-    o.dataset.nama = c.nama;
-    o.textContent = c.kode + ' — ' + c.nama;
-    sc.appendChild(o);
-  });
-  clearErr('f-area');
-});
-
-document.getElementById('selectCabang').addEventListener('change', function() {
-  var opt = this.options[this.selectedIndex];
-  var kode = this.value;
-  var nama = opt ? (opt.dataset.nama || '') : '';
-  document.getElementById('kodeCabang').value = kode;
-  document.getElementById('namaCabang').value = nama;
-  if (kode) {
-    document.getElementById('labelCabang').textContent = kode + ' · ' + nama;
-    document.getElementById('infoCabang').classList.add('show');
-    clearErr('f-cabang');
-    updateLivinFoodCard(kode);
-    updateEDCLVMCard(kode);
-  } else {
-    document.getElementById('infoCabang').classList.remove('show');
-    hideLivinFoodCard();
-    hideEDCLVMCard();
-  }
-});
-
-function updateTotal() {
-  var l = parseInt(document.getElementById('jumlahLVM').value) || 0;
-  var e = parseInt(document.getElementById('jumlahEDC').value) || 0;
-  var p = parseInt(document.getElementById('jumlahEDCPOT').value) || 0;
-  document.getElementById('totalAkuisisi').textContent = l + e + p;
-}
-
-// ── Validasi ────────────────────────────────────────────────────
-function validasi() {
-  var ok = true;
-  [
-    {wrap:'f-tanggal', id:'tanggalLaporan'},
-    {wrap:'f-area',    id:'selectArea'},
-    {wrap:'f-cabang',  id:'selectCabang'},
-    {wrap:'f-lvm',     id:'jumlahLVM'},
-    {wrap:'f-edc',     id:'jumlahEDC'},
-    {wrap:'f-edcpot',  id:'jumlahEDCPOT'},
-    {wrap:'f-plvm',    id:'jumlahPemasanganLVM'},
-    {wrap:'f-redc',    id:'jumlahRetensiEDC'},
-    {wrap:'f-leadscakra',     id:'totalLeadsCakra'},
-    {wrap:'f-kunjungancakra', id:'totalKunjunganCakra'},
-    {wrap:'f-gapcakra',       id:'gapCakra'},
-    ...(document.getElementById('cardLivinFood').style.display !== 'none'
-        ? [{wrap:'f-merchantlivinfood', id:'namaMerchantLivinFood'},
-           {wrap:'f-livinfood', id:'jumlahTransaksiLivinFood'}] : [])
-  ].forEach(function(f) {
-    var el = document.getElementById(f.id);
-    var wrap = document.getElementById(f.wrap);
-    if (!el.value || el.value === '') {
-      wrap.classList.add('field-invalid');
-      wrap.querySelector('.error-msg').classList.add('show');
-      ok = false;
-    } else {
-      wrap.classList.remove('field-invalid');
-      wrap.querySelector('.error-msg').classList.remove('show');
-    }
-  });
-  return ok;
-}
-
-function clearErr(wrapId) {
-  var w = document.getElementById(wrapId);
-  if (w) {
-    w.classList.remove('field-invalid');
-    var e = w.querySelector('.error-msg');
-    if (e) e.classList.remove('show');
-  }
-}
-
-// ── Submit ──────────────────────────────────────────────────────
-document.getElementById('formLaporan').addEventListener('submit', function(ev) {
-  ev.preventDefault();
-  if (!validasi()) {
-    var first = document.querySelector('.field-invalid input, .field-invalid select');
-    if (first) first.scrollIntoView({behavior:'smooth', block:'center'});
+  if (!id) {
+    tampilkanError('Link tidak valid — ID laporan tidak ditemukan.');
     return;
   }
 
-  document.getElementById('loadingOverlay').classList.add('show');
-  document.getElementById('btnSubmit').disabled = true;
-
-  var params = new URLSearchParams({
-    action          : 'submit',
-    tanggal         : document.getElementById('tanggalLaporan').value,
-    area            : document.getElementById('areaValue').value,
-    kodeCabang      : document.getElementById('kodeCabang').value,
-    namaCabang      : document.getElementById('namaCabang').value,
-    jumlahLVM       : document.getElementById('jumlahLVM').value || '0',
-    jumlahEDC       : document.getElementById('jumlahEDC').value || '0',
-    jumlahEDCPOT    : document.getElementById('jumlahEDCPOT').value || '0',
-    jumlahPemasanganLVM : document.getElementById('jumlahPemasanganLVM').value || '0',
-    jumlahRetensiEDC    : document.getElementById('jumlahRetensiEDC').value || '0',
-    totalLeadsCakra     : document.getElementById('totalLeadsCakra').value || '0',
-    totalKunjunganCakra : document.getElementById('totalKunjunganCakra').value || '0',
-    gapCakra            : document.getElementById('gapCakra').value || '0',
-    namaMerchantLivinFood    : document.getElementById('namaMerchantLivinFood').value || '-',
-    jumlahTransaksiLivinFood : document.getElementById('jumlahTransaksiLivinFood').value || '0',
-    namaMerchantEDCLVM   : document.getElementById('namaMerchantEDCLVM').value || '-',
-    statusProgressEDCLVM : document.getElementById('namaMerchantEDCLVM').value
-                            ? document.getElementById('statusProgressEDCLVM').value
-                            : '-',
-    kendala         : document.getElementById('kendala').value.trim() || '-',
-    keterangan      : document.getElementById('keterangan').value.trim() || '-'
-  });
-
-  fetch(APPS_SCRIPT_URL + '?' + params.toString())
+  // Ambil data laporan dari Apps Script
+  fetch(APPS_SCRIPT_URL + '?action=getData&id=' + encodeURIComponent(id))
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (data.success && data.idLaporan) {
-        window.location.href = 'laporan.html?id=' + data.idLaporan;
-      } else {
-        throw new Error(data.error || 'Respons tidak valid dari server.');
+      if (!data || data.error) {
+        tampilkanError('Laporan dengan ID <strong>' + id + '</strong> tidak ditemukan.');
+        return;
       }
+      tampilkanLaporan(data);
     })
     .catch(function(err) {
-      document.getElementById('loadingOverlay').classList.remove('show');
-      document.getElementById('btnSubmit').disabled = false;
-      alert('❌ Gagal menyimpan laporan:\n' + err.message + '\n\nPastikan URL Apps Script sudah benar di file index.html.');
+      tampilkanError('Gagal memuat data: ' + err.message);
     });
-});
+};
+
+function tampilkanLaporan(d) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('kontenLaporan').style.display = 'block';
+
+  // Isi data
+  document.getElementById('badgeID').textContent = 'ID: ' + d.idLaporan;
+  document.getElementById('footerID').textContent = d.idLaporan;
+  document.getElementById('infoTanggal').textContent = d.tanggal;
+  document.getElementById('infoArea').textContent = d.area || '-';
+  document.getElementById('infoCabang').textContent = d.namaCabang;
+  document.getElementById('infoKode').textContent = d.kodeCabang;
+  document.getElementById('statLVM').textContent = d.jumlahLVM;
+  document.getElementById('statEDC').textContent = d.jumlahEDC;
+  document.getElementById('statEDCPOT').textContent = d.jumlahEDCPOT || 0;
+  document.getElementById('statPLVM').textContent = d.jumlahPemasanganLVM || 0;
+  document.getElementById('statREDC').textContent = d.jumlahRetensiEDC || 0;
+  document.getElementById('statTotal').textContent = d.total;
+  document.getElementById('statLeadsCakra').textContent = d.totalLeadsCakra || 0;
+  document.getElementById('statKunjunganCakra').textContent = d.totalKunjunganCakra || 0;
+  document.getElementById('statGapCakra').textContent = d.gapCakra || 0;
+  document.getElementById('statLivinFood').textContent = d.jumlahTransaksiLivinFood || 0;
+  if (d.namaMerchantLivinFood && d.namaMerchantLivinFood !== '-') {
+    document.getElementById('statMerchantLivinFood').textContent = d.namaMerchantLivinFood;
+    document.getElementById('infoMerchantLivinFood').style.display = 'block';
+  }
+
+  if (d.namaMerchantEDCLVM && d.namaMerchantEDCLVM !== '-') {
+    document.getElementById('statMerchantEDCLVM').textContent = d.namaMerchantEDCLVM;
+    document.getElementById('statStatusEDCLVM').textContent = d.statusProgressEDCLVM || '-';
+    document.getElementById('linkPipelineCabang').href = 'pipeline.html?kode=' + encodeURIComponent(d.kodeCabang);
+    document.getElementById('cardEDCLVM').style.display = 'block';
+  }
+
+  if (d.kendala && d.kendala !== '-') {
+    document.getElementById('infoKendala').textContent = d.kendala;
+    document.getElementById('boxKendala').style.display = 'block';
+  }
+  if (d.keterangan && d.keterangan !== '-') {
+    document.getElementById('infoKeterangan').textContent = d.keterangan;
+    document.getElementById('boxKeterangan').style.display = 'block';
+  }
+
+  // Teks WA
+  TEKS_WA = d.teksWA || '';
+  document.getElementById('teksWA').textContent = TEKS_WA;
+
+  // Tombol WA
+  var btnWA = document.getElementById('btnWA');
+  btnWA.href = 'https://wa.me/?text=' + encodeURIComponent(TEKS_WA);
+
+  // Update judul halaman
+  document.title = 'Laporan ' + d.namaCabang + ' — ' + d.tanggal;
+}
+
+function tampilkanError(msg) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorMsg').innerHTML = msg;
+  document.getElementById('errorState').style.display = 'block';
+}
+
+function copyLaporan() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(TEKS_WA)
+      .then(function() { toast('Teks berhasil disalin!'); })
+      .catch(fallbackCopy);
+  } else { fallbackCopy(); }
+}
+
+function fallbackCopy() {
+  var ta = document.createElement('textarea');
+  ta.value = TEKS_WA;
+  ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); toast('Teks berhasil disalin!'); }
+  catch(e) { toast('Gagal salin. Tekan & tahan teks.'); }
+  document.body.removeChild(ta);
+}
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2500);
+}
 </script>
 </body>
 </html>
