@@ -230,9 +230,51 @@
     }
     .wa-box:hover { background: rgba(255,255,255,.07); }
 
+    /* Tombol "Lanjutkan Laporan" — melayang di bawah layar, selalu
+       kelihatan walau daftar merchant-nya ribuan baris & panjang banget. */
+    .fab-lanjutkan {
+      position: fixed;
+      left: 50%; bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 400;
+      display: flex; align-items: center; gap: 8px;
+      padding: 13px 22px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #4472ef, #2b4fd6);
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 800;
+      font-family: inherit;
+      text-decoration: none;
+      box-shadow: 0 14px 34px -10px rgba(43,79,214,.8);
+      border: 1px solid rgba(255,255,255,.25);
+      white-space: nowrap;
+    }
+    .fab-lanjutkan:active { transform: translateX(-50%) scale(0.97); }
+
+    /* Tombol yang sama, versi statis di atas (sebelum daftar merchant) —
+       supaya tetap ada opsi tanpa perlu scroll ke bawah dulu. */
+    .btn-lanjutkan-top {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      padding: 13px 20px;
+      margin-top: 16px;
+      border-radius: 12px;
+      background: rgba(68,114,239,.16);
+      border: 1px solid rgba(68,114,239,.5);
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 800;
+      font-family: inherit;
+      text-decoration: none;
+    }
+
+    /* Kasih jarak di paling bawah biar konten terakhir nggak ketutup FAB */
+    .container { padding-bottom: 90px; }
+
     #toast {
       position: fixed;
-      bottom: 24px; left: 50%;
+      bottom: 88px; left: 50%;
       transform: translateX(-50%) translateY(80px);
       background: rgba(10,14,30,.92);
       border: 1px solid rgba(255,255,255,.14);
@@ -256,16 +298,18 @@
       <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
     </div>
   </div>
-  <a class="topbar-nav" href="index.html">Form Laporan →</a>
+  <a class="topbar-nav" href="index.html">Lanjutkan Laporan →</a>
 </div>
 
 <div class="container">
 
   <div class="page-head">
-    <a class="breadcrumb" href="index.html">← Kembali ke Form Laporan</a>
+    <a class="breadcrumb" href="index.html">← Lanjutkan Laporan</a>
     <h1 class="page-title">Pipeline Akuisisi Merchant</h1>
     <div class="page-subtitle" id="headerSubtitle">Memuat data...</div>
   </div>
+
+  <a href="index.html" class="btn-lanjutkan-top">↩ Lanjutkan Laporan di Form</a>
 
   <div id="loadingState">
     <div class="spinner"></div>
@@ -344,7 +388,7 @@
       <div style="font-size:44px;margin-bottom:16px;">⚠</div>
       <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin-bottom:8px;color:#fff;">Gagal Memuat Data</h2>
       <p style="color:rgba(255,255,255,.55);font-size:13.5px;margin-bottom:20px;" id="errorMsg">Terjadi kesalahan saat mengambil data pipeline.</p>
-      <a href="index.html" class="back-link">← Kembali ke Form Laporan</a>
+      <a href="index.html" class="back-link">← Lanjutkan Laporan</a>
     </div>
   </div>
 
@@ -353,6 +397,10 @@
     <span>Copyright &copy; 2026 RTF Team</span>
   </div>
 </div>
+
+<!-- Selalu melayang di bawah layar — biar tetap kelihatan walau daftar
+     merchant-nya panjang dan user lagi scroll jauh ke bawah. -->
+<a href="index.html" class="fab-lanjutkan">↩ Lanjutkan Laporan</a>
 
 <!-- Modal update status -->
 <div class="modal-overlay" id="modalOverlay">
