@@ -85,10 +85,16 @@ function doGet(e) {
   if (action === 'updateStatus') {
     try {
       var ssUpd = SpreadsheetApp.getActiveSpreadsheet();
-      var kodeCabangUpd  = e.parameter.kodeCabang  || '';
+      var kodeCabangUpd   = e.parameter.kodeCabang   || '';
       var namaMerchantUpd = e.parameter.namaMerchant || '';
-      var statusBaruUpd   = e.parameter.status        || '';
-      var berhasilUpd = updatePipelineStatus(ssUpd, kodeCabangUpd, namaMerchantUpd, statusBaruUpd);
+      var statusBaruUpd   = e.parameter.status       || '';
+      var midUpd          = e.parameter.mid          || '';
+
+      if (statusBaruUpd === 'Done Konversi to LVM' && !midUpd.trim()) {
+        return jsonResponse({ success: false, error: 'MID wajib diisi untuk status Done Konversi to LVM.' });
+      }
+
+      var berhasilUpd = updatePipelineStatus(ssUpd, kodeCabangUpd, namaMerchantUpd, statusBaruUpd, midUpd);
       if (berhasilUpd) {
         return jsonResponse({ success: true });
       } else {
@@ -549,7 +555,7 @@ function getOrCreateSheetPipeline(ss) {
     sheet = ss.insertSheet(CONFIG.NAMA_SHEET_PIPELINE);
     var headers = [
       'Kode Cabang', 'Nama Cabang', 'Area', 'Nama Merchant EDC', 'Alamat', 'Kota / Kab',
-      'Status Progress', 'Tanggal Update Terakhir', 'Catatan'
+      'Status Progress', 'MID', 'Tanggal Update Terakhir', 'Catatan'
     ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length)
@@ -629,6 +635,7 @@ function getPipelineAll(kodeCabangFilter) {
   var idxAlamat    = headers.indexOf('Alamat');
   var idxKota      = headers.indexOf('Kota / Kab');
   var idxStatus    = headers.indexOf('Status Progress');
+  var idxMid       = headers.indexOf('MID');
   var idxTgl       = headers.indexOf('Tanggal Update Terakhir');
   var idxCatatan   = headers.indexOf('Catatan');
 
@@ -648,6 +655,7 @@ function getPipelineAll(kodeCabangFilter) {
       alamat        : idxAlamat !== -1 ? (data[i][idxAlamat] || '-') : '-',
       kota          : idxKota   !== -1 ? (data[i][idxKota]   || '-') : '-',
       status        : data[i][idxStatus] || 'Kunjungan Awal',
+      mid           : idxMid !== -1 ? (data[i][idxMid] || '-') : '-',
       tanggalUpdate : data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '-',
       catatan       : idxCatatan !== -1 ? (data[i][idxCatatan] || '-') : '-'
     });
@@ -658,12 +666,14 @@ function getPipelineAll(kodeCabangFilter) {
 /**
  * Update status progress satu merchant di sheet "Pipeline EDC to LVM".
  * Dipanggil dari prosesSubmit() saat user memilih merchant + status baru
- * di form. Mencari baris berdasarkan kombinasi Kode Cabang + Nama Merchant,
- * lalu menimpa kolom Status Progress & Tanggal Update Terakhir baris itu
+ * di form, dan dari action=updateStatus (pipeline.html). Mencari baris
+ * berdasarkan kombinasi Kode Cabang + Nama Merchant, lalu menimpa kolom
+ * Status Progress, MID (kalau diisi), & Tanggal Update Terakhir baris itu
  * (bukan menambah baris baru — 1 merchant = 1 baris terus terupdate).
+ * Parameter "mid" opsional — hanya ditulis kalau ada isinya.
  * Return true kalau baris ditemukan & berhasil diupdate, false kalau tidak.
  */
-function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru) {
+function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru, mid) {
   var sheet = ss.getSheetByName(CONFIG.NAMA_SHEET_PIPELINE);
   if (!sheet) return false;
 
@@ -679,6 +689,7 @@ function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru) {
   var idxKode     = headers.indexOf('Kode Cabang');
   var idxMerchant = headers.indexOf('Nama Merchant EDC');
   var idxStatus   = headers.indexOf('Status Progress');
+  var idxMid      = headers.indexOf('MID');
   var idxTgl      = headers.indexOf('Tanggal Update Terakhir');
   if (idxKode === -1 || idxMerchant === -1 || idxStatus === -1) return false;
 
@@ -690,6 +701,9 @@ function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru) {
     var merchantBaris = String(data[i][idxMerchant] || '').trim();
     if (kodeBaris === kodeCari && merchantBaris === merchantCari) {
       sheet.getRange(i + 1, idxStatus + 1).setValue(statusBaru);
+      if (idxMid !== -1 && mid && String(mid).trim()) {
+        sheet.getRange(i + 1, idxMid + 1).setValue(String(mid).trim());
+      }
       if (idxTgl !== -1) {
         sheet.getRange(i + 1, idxTgl + 1).setValue(
           Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy')

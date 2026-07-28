@@ -343,6 +343,11 @@
       <option value="Merchant Menolak">Merchant Menolak</option>
       <option value="Merchant Tutup">Merchant Tutup</option>
     </select>
+
+    <div id="fieldMid" style="display:none;margin-top:16px;">
+      <label class="field-label">MID <span style="color:#ff8fa3;">*</span></label>
+      <input type="text" id="modalMid" class="search-input" placeholder="Masukkan MID" style="margin-bottom:0;">
+    </div>
     <div class="modal-error" id="modalError">Gagal menyimpan. Coba lagi.</div>
 
     <div class="modal-actions">
@@ -424,9 +429,10 @@ function tampilkanData() {
   document.getElementById('listPipeline').addEventListener('click', function(ev) {
     var item = ev.target.closest('.list-item');
     if (!item) return;
-    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat);
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid);
   });
 
+  document.getElementById('modalStatus').addEventListener('change', toggleFieldMid);
   document.getElementById('modalCancel').addEventListener('click', tutupModal);
   document.getElementById('modalOverlay').addEventListener('click', function(ev) {
     if (ev.target === this) tutupModal();
@@ -519,7 +525,7 @@ function render() {
     var alamatGabungan = [m.alamat, m.kota].filter(function(v) { return v && v !== '-'; }).join(', ');
     var alamatBaris = alamatGabungan ? '<div class="list-item-alamat">' + escHtml(alamatGabungan) + '</div>' : '';
     return '' +
-      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(m.namaCabang) + '" data-alamat="' + escAttr(alamatGabungan) + '">' +
+      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(m.namaCabang) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '">' +
         '<div class="list-item-top">' +
           '<span class="list-item-nama">' + escHtml(m.namaMerchant) + '</span>' +
           '<span class="badge ' + badgeClassFor(m.status) + '">' + escHtml(m.status) + '</span>' +
@@ -541,11 +547,12 @@ function escAttr(s) {
 // ── Modal update status ──────────────────────────────────────────
 var STATUS_VALID = ['Kunjungan Awal', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup'];
 
-function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat) {
+function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid) {
   MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant };
   document.getElementById('modalMerchant').textContent = namaMerchant;
   document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
   document.getElementById('modalAlamat').textContent = alamat || '';
+  document.getElementById('modalMid').value = mid || '';
   // Data lama mungkin masih pakai status sebelum migrasi (mis. "Proses");
   // kalau tidak cocok salah satu opsi baru, default ke tahap paling awal.
   document.getElementById('modalStatus').value = STATUS_VALID.indexOf(statusSaatIni) !== -1
@@ -553,6 +560,12 @@ function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat) 
     : 'Kunjungan Awal';
   document.getElementById('modalError').classList.remove('show');
   document.getElementById('modalOverlay').classList.add('show');
+  toggleFieldMid();
+}
+
+function toggleFieldMid() {
+  var perluMid = document.getElementById('modalStatus').value === 'Done Konversi to LVM';
+  document.getElementById('fieldMid').style.display = perluMid ? 'block' : 'none';
 }
 
 function tutupModal() {
@@ -563,9 +576,18 @@ function tutupModal() {
 function simpanStatus() {
   if (!MODAL_TARGET) return;
   var statusBaru = document.getElementById('modalStatus').value;
+  var midValue = document.getElementById('modalMid').value.trim();
   var btn = document.getElementById('modalSave');
   var errBox = document.getElementById('modalError');
   errBox.classList.remove('show');
+
+  if (statusBaru === 'Done Konversi to LVM' && !midValue) {
+    errBox.textContent = 'MID wajib diisi untuk status Done Konversi to LVM.';
+    errBox.classList.add('show');
+    document.getElementById('modalMid').focus();
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Menyimpan...';
 
@@ -573,7 +595,8 @@ function simpanStatus() {
     action       : 'updateStatus',
     kodeCabang   : MODAL_TARGET.kodeCabang,
     namaMerchant : MODAL_TARGET.namaMerchant,
-    status       : statusBaru
+    status       : statusBaru,
+    mid          : midValue
   });
 
   fetch(APPS_SCRIPT_URL + '?' + params.toString())
@@ -590,6 +613,7 @@ function simpanStatus() {
       DATA_ALL.forEach(function(m) {
         if (m.kodeCabang === MODAL_TARGET.kodeCabang && m.namaMerchant === MODAL_TARGET.namaMerchant) {
           m.status = statusBaru;
+          if (midValue) m.mid = midValue;
           m.tanggalUpdate = 'Baru saja';
         }
       });
