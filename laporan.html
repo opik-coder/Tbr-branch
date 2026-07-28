@@ -332,6 +332,21 @@
       </div>
     </div>
 
+    <!-- Konversi EDC to LVM -->
+    <div class="card" id="cardEDCLVM" style="display:none;">
+      <div class="card-title">🔄 Progress Konversi EDC to LVM</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <span class="info-label">Merchant</span>
+          <span class="info-value" id="statMerchantEDCLVM">-</span>
+        </div>
+        <div class="info-item full">
+          <span class="info-label">Status Progress</span>
+          <span class="info-value" id="statStatusEDCLVM">-</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Teks WA -->
     <div class="card">
       <div class="card-title">💬 Format Laporan WhatsApp</div>
@@ -428,6 +443,12 @@ function tampilkanLaporan(d) {
   if (d.namaMerchantLivinFood && d.namaMerchantLivinFood !== '-') {
     document.getElementById('statMerchantLivinFood').textContent = d.namaMerchantLivinFood;
     document.getElementById('infoMerchantLivinFood').style.display = 'block';
+  }
+
+  if (d.namaMerchantEDCLVM && d.namaMerchantEDCLVM !== '-') {
+    document.getElementById('statMerchantEDCLVM').textContent = d.namaMerchantEDCLVM;
+    document.getElementById('statStatusEDCLVM').textContent = d.statusProgressEDCLVM || '-';
+    document.getElementById('cardEDCLVM').style.display = 'block';
   }
 
   if (d.kendala && d.kendala !== '-') {
