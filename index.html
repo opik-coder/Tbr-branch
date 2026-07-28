@@ -390,9 +390,10 @@
       <div class="field" id="f-statusedclvm" style="margin-top:14px;display:none;">
         <label>Update Status Progress</label>
         <select id="statusProgressEDCLVM">
-          <option value="Proses">Proses</option>
-          <option value="Sudah LVM">Sudah LVM</option>
-          <option value="Done Akuisisi">Done Akuisisi</option>
+          <option value="Kunjungan Awal">Kunjungan Awal</option>
+          <option value="Done Konversi to LVM">Done Konversi to LVM</option>
+          <option value="Merchant Menolak">Merchant Menolak</option>
+          <option value="Merchant Tutup">Merchant Tutup</option>
         </select>
       </div>
     </div>
@@ -622,7 +623,7 @@ document.getElementById('namaMerchantEDCLVM').addEventListener('change', functio
   var statusInfo  = document.getElementById('infoStatusEDCLVM');
   var fieldStatus = document.getElementById('f-statusedclvm');
   if (this.value) {
-    var statusSaatIni = (opt && opt.dataset.status) || 'Proses';
+    var statusSaatIni = (opt && opt.dataset.status) || 'Kunjungan Awal';
     document.getElementById('labelStatusEDCLVM').textContent = statusSaatIni;
     statusInfo.classList.add('show');
     fieldStatus.style.display = 'block';

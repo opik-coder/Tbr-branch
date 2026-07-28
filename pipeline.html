@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pipeline Konversi EDC to LVM — RTF Report</title>
+  <title>Pipeline Akuisisi Merchant — RTF Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -79,12 +79,16 @@
     .stat-box.highlight { background: rgba(47,95,224,.12); border-color: rgba(47,95,224,.4); }
     .stat-number { font-size: 24px; font-weight: 800; line-height: 1; color: #fff; }
     .stat-box.highlight .stat-number { color: #8faaf5; }
-    .stat-box.proses .stat-number { color: #fbbf24; }
-    .stat-box.sudahlvm .stat-number { color: #38bdf8; }
+    .stat-box.kunjungan .stat-number { color: #fbbf24; }
     .stat-box.done .stat-number { color: #5ee08a; }
+    .stat-box.menolak .stat-number { color: #fb923c; }
+    .stat-box.tutup .stat-number { color: #f87171; }
     .stat-label { font-size: 10.5px; color: rgba(255,255,255,.55); font-weight: 600; margin-top: 5px; line-height: 1.3; }
 
-    .search-input {
+    .field-label { display: block; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 7px; }
+    .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+    .search-input, select.select-input {
       width: 100%;
       padding: 12px 14px;
       border: 1px solid rgba(255,255,255,.14);
@@ -97,8 +101,16 @@
       outline: none;
       margin-bottom: 12px;
     }
+    select.select-input {
+      appearance: none; -webkit-appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat; background-position: right 14px center;
+      padding-right: 38px; margin-bottom: 0;
+    }
+    select.select-input option { color: #1f2a44; }
+    select.select-input:disabled { opacity: .45; cursor: not-allowed; }
     .search-input::placeholder { color: rgba(255,255,255,.35); }
-    .search-input:focus { border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.08); }
+    .search-input:focus, select.select-input:focus { border-color: rgba(255,255,255,.35); background-color: rgba(255,255,255,.08); }
 
     .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
     .filter-tab {
@@ -121,20 +133,25 @@
       border-radius: 14px;
       padding: 13px 16px;
       margin-bottom: 10px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
     }
+    .list-item:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.16); }
     .list-item:last-child { margin-bottom: 0; }
     .list-item-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .list-item-nama { font-size: 14.5px; font-weight: 700; color: #fff; }
     .list-item-info { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 4px; }
+    .list-item-alamat { font-size: 11.5px; color: rgba(255,255,255,.4); margin-top: 3px; }
     .list-item-tgl { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 6px; }
 
     .badge {
       font-size: 11px; font-weight: 700; padding: 4px 11px;
       border-radius: 999px; white-space: nowrap; flex-shrink: 0;
     }
-    .badge-proses     { background: rgba(251,191,36,.16); color: #fbbf24; border: 1px solid rgba(251,191,36,.4); }
-    .badge-sudahlvm   { background: rgba(56,189,248,.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,.4); }
+    .badge-kunjungan  { background: rgba(251,191,36,.16); color: #fbbf24; border: 1px solid rgba(251,191,36,.4); }
     .badge-done       { background: rgba(94,224,138,.16); color: #86efac; border: 1px solid rgba(94,224,138,.4); }
+    .badge-menolak    { background: rgba(251,146,60,.16);  color: #fdba74; border: 1px solid rgba(251,146,60,.4); }
+    .badge-tutup      { background: rgba(248,113,113,.16); color: #fca5a5; border: 1px solid rgba(248,113,113,.4); }
 
     .empty { text-align: center; padding: 24px; color: rgba(255,255,255,.5); font-size: 13.5px; }
 
@@ -155,6 +172,58 @@
       font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,.75);
       text-decoration: underline;
     }
+
+    /* Modal update status */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(4,6,14,.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-panel {
+      width: 100%; max-width: 400px;
+      background: #101833;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 30px 70px -20px rgba(0,0,0,.7);
+    }
+    .modal-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 19px; color: #fff; margin-bottom: 4px; }
+    .modal-sub { font-size: 12.5px; color: rgba(255,255,255,.5); margin-bottom: 20px; }
+    .modal-error { font-size: 12.5px; color: #fca5a5; margin-top: 10px; display: none; }
+    .modal-error.show { display: block; }
+    .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 22px; }
+    .modal-cancel {
+      font-size: 13.5px; font-weight: 700; color: rgba(255,255,255,.75);
+      background: none; border: none; cursor: pointer; font-family: inherit;
+    }
+    .modal-cancel:hover { color: #fff; }
+    .modal-save {
+      padding: 11px 22px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #4472ef, #2b4fd6);
+      color: #fff; font-size: 13.5px; font-weight: 700; font-family: inherit;
+      cursor: pointer; box-shadow: 0 12px 26px -12px rgba(43,79,214,.7);
+    }
+    .modal-save:disabled { opacity: .6; cursor: not-allowed; }
+
+    #toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(10,14,30,.92);
+      border: 1px solid rgba(255,255,255,.14);
+      color: white;
+      padding: 11px 22px; border-radius: 24px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+      transition: transform 0.3s; z-index: 1000;
+      pointer-events: none;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
@@ -174,7 +243,7 @@
 
   <div class="page-head">
     <a class="breadcrumb" href="index.html">← Kembali ke Form Laporan</a>
-    <h1 class="page-title">Pipeline Konversi EDC to LVM</h1>
+    <h1 class="page-title">Pipeline Akuisisi Merchant</h1>
     <div class="page-subtitle" id="headerSubtitle">Memuat data...</div>
   </div>
 
@@ -192,34 +261,54 @@
           <div class="stat-number" id="statTotal">0</div>
           <div class="stat-label">Total Merchant</div>
         </div>
-        <div class="stat-box proses">
-          <div class="stat-number" id="statProses">0</div>
-          <div class="stat-label">Proses</div>
-        </div>
-        <div class="stat-box sudahlvm">
-          <div class="stat-number" id="statSudahLVM">0</div>
-          <div class="stat-label">Sudah LVM</div>
+        <div class="stat-box kunjungan">
+          <div class="stat-number" id="statKunjungan">0</div>
+          <div class="stat-label">Kunjungan Awal</div>
         </div>
         <div class="stat-box done">
           <div class="stat-number" id="statDone">0</div>
-          <div class="stat-label">Done Akuisisi</div>
+          <div class="stat-label">Done Konversi to LVM</div>
+        </div>
+        <div class="stat-box menolak">
+          <div class="stat-number" id="statMenolak">0</div>
+          <div class="stat-label">Merchant Menolak</div>
+        </div>
+        <div class="stat-box tutup">
+          <div class="stat-number" id="statTutup">0</div>
+          <div class="stat-label">Merchant Tutup</div>
         </div>
       </div>
     </div>
 
-    <div class="card" id="cardFilter" style="display:none;">
+    <div class="card">
       <div class="card-title">Filter</div>
-      <input type="text" id="searchBox" class="search-input" placeholder="Cari nama cabang / merchant...">
+      <div class="filter-row">
+        <div>
+          <label class="field-label">Area</label>
+          <select id="selectArea" class="select-input">
+            <option value="">Semua Area</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Cabang</label>
+          <select id="selectCabang" class="select-input" disabled>
+            <option value="">Semua Cabang</option>
+          </select>
+        </div>
+      </div>
+      <input type="text" id="searchBox" class="search-input" placeholder="Cari nama merchant...">
       <div class="filter-tabs" id="filterTabs">
         <button class="filter-tab active" data-status="">Semua</button>
-        <button class="filter-tab" data-status="Proses">Proses</button>
-        <button class="filter-tab" data-status="Sudah LVM">Sudah LVM</button>
-        <button class="filter-tab" data-status="Done Akuisisi">Done Akuisisi</button>
+        <button class="filter-tab" data-status="Kunjungan Awal">Kunjungan Awal</button>
+        <button class="filter-tab" data-status="Done Konversi to LVM">Done Konversi to LVM</button>
+        <button class="filter-tab" data-status="Merchant Menolak">Merchant Menolak</button>
+        <button class="filter-tab" data-status="Merchant Tutup">Merchant Tutup</button>
       </div>
     </div>
 
     <div class="card">
       <div class="card-title">Daftar Merchant</div>
+      <p style="font-size:12px;color:rgba(255,255,255,.45);margin:-10px 0 14px;">Klik salah satu merchant untuk update progress.</p>
       <div id="listPipeline"></div>
     </div>
 
@@ -235,10 +324,35 @@
   </div>
 
   <div class="footer">
-    Pipeline Konversi EDC to LVM<br>
+    Pipeline Akuisisi Merchant<br>
     <span>Copyright &copy; 2026 RTF Team</span>
   </div>
 </div>
+
+<!-- Modal update status -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-panel">
+    <div class="modal-title" id="modalMerchant">-</div>
+    <div class="modal-sub" id="modalCabang">-</div>
+    <div class="modal-sub" id="modalAlamat" style="margin-top:-14px;"></div>
+
+    <label class="field-label">Status Progress</label>
+    <select id="modalStatus" class="select-input">
+      <option value="Kunjungan Awal">Kunjungan Awal</option>
+      <option value="Done Konversi to LVM">Done Konversi to LVM</option>
+      <option value="Merchant Menolak">Merchant Menolak</option>
+      <option value="Merchant Tutup">Merchant Tutup</option>
+    </select>
+    <div class="modal-error" id="modalError">Gagal menyimpan. Coba lagi.</div>
+
+    <div class="modal-actions">
+      <button class="modal-cancel" id="modalCancel" type="button">Batal</button>
+      <button class="modal-save" id="modalSave" type="button">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">Status berhasil diperbarui!</div>
 
 <script>
 // ================================================================
@@ -249,7 +363,9 @@ var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl4SiO8CeyYrF4vD
 
 var DATA_ALL = [];
 var KODE_FILTER = '';
+var AREA_FILTER = '';
 var STATUS_FILTER = '';
+var MODAL_TARGET = null; // { kodeCabang, namaMerchant } sedang diedit
 
 window.onload = function() {
   var params = new URLSearchParams(window.location.search);
@@ -273,17 +389,15 @@ function tampilkanData() {
   document.getElementById('kontenPipeline').style.display = 'block';
 
   var subtitle = document.getElementById('headerSubtitle');
-  if (KODE_FILTER) {
-    if (DATA_ALL.length) {
-      subtitle.textContent = DATA_ALL[0].namaCabang + ' · Kode ' + DATA_ALL[0].kodeCabang;
-    } else {
-      subtitle.textContent = 'Kode Cabang ' + KODE_FILTER + ' — belum ada data merchant';
-    }
+  if (KODE_FILTER && DATA_ALL.length) {
+    subtitle.textContent = DATA_ALL[0].namaCabang + ' · Kode ' + DATA_ALL[0].kodeCabang;
+  } else if (KODE_FILTER) {
+    subtitle.textContent = 'Kode Cabang ' + KODE_FILTER + ' — belum ada data merchant';
   } else {
     subtitle.textContent = 'Semua Cabang · Region X (Sulawesi & Maluku)';
-    document.getElementById('cardFilter').style.display = 'block';
   }
 
+  isiFilterAreaCabang();
   render();
 
   document.getElementById('searchBox').addEventListener('input', render);
@@ -295,12 +409,71 @@ function tampilkanData() {
       render();
     });
   });
+
+  document.getElementById('selectArea').addEventListener('change', function() {
+    AREA_FILTER = this.value;
+    KODE_FILTER = '';
+    isiSelectCabang();
+    render();
+  });
+  document.getElementById('selectCabang').addEventListener('change', function() {
+    KODE_FILTER = this.value;
+    render();
+  });
+
+  document.getElementById('listPipeline').addEventListener('click', function(ev) {
+    var item = ev.target.closest('.list-item');
+    if (!item) return;
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat);
+  });
+
+  document.getElementById('modalCancel').addEventListener('click', tutupModal);
+  document.getElementById('modalOverlay').addEventListener('click', function(ev) {
+    if (ev.target === this) tutupModal();
+  });
+  document.getElementById('modalSave').addEventListener('click', simpanStatus);
+}
+
+// ── Isi dropdown Area & Cabang dari data pipeline yang sudah dimuat ──
+function isiFilterAreaCabang() {
+  var areaSel = document.getElementById('selectArea');
+  var areas = Array.from(new Set(DATA_ALL.map(function(m) { return m.area; })
+    .filter(function(a) { return a && a !== '-'; }))).sort();
+  areaSel.innerHTML = '<option value="">Semua Area</option>' +
+    areas.map(function(a) { return '<option value="' + a + '">' + a + '</option>'; }).join('');
+
+  if (KODE_FILTER && DATA_ALL.length) {
+    AREA_FILTER = DATA_ALL[0].area;
+    areaSel.value = AREA_FILTER;
+  }
+  isiSelectCabang();
+}
+
+function isiSelectCabang() {
+  var cabangSel = document.getElementById('selectCabang');
+  var relevan = AREA_FILTER ? DATA_ALL.filter(function(m) { return m.area === AREA_FILTER; }) : DATA_ALL;
+  var map = {};
+  relevan.forEach(function(m) { map[m.kodeCabang] = m.namaCabang; });
+  // Urutkan berdasarkan Kode Cabang (numerik kalau bisa, string sebagai fallback
+  // untuk kode non-numerik seperti "#N/A").
+  var kodeList = Object.keys(map).sort(function(a, b) {
+    var na = Number(a), nb = Number(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return String(a).localeCompare(String(b));
+  });
+
+  cabangSel.disabled = !AREA_FILTER;
+  cabangSel.innerHTML = '<option value="">Semua Cabang</option>' +
+    kodeList.map(function(k) { return '<option value="' + k + '">' + k + ' - ' + map[k] + '</option>'; }).join('');
+
+  if (KODE_FILTER) cabangSel.value = KODE_FILTER;
 }
 
 function badgeClassFor(status) {
-  if (status === 'Sudah LVM') return 'badge-sudahlvm';
-  if (status === 'Done Akuisisi') return 'badge-done';
-  return 'badge-proses';
+  if (status === 'Done Konversi to LVM') return 'badge-done';
+  if (status === 'Merchant Menolak') return 'badge-menolak';
+  if (status === 'Merchant Tutup') return 'badge-tutup';
+  return 'badge-kunjungan';
 }
 
 function render() {
@@ -308,23 +481,32 @@ function render() {
 
   var filtered = DATA_ALL.filter(function(m) {
     if (STATUS_FILTER && m.status !== STATUS_FILTER) return false;
+    if (AREA_FILTER && m.area !== AREA_FILTER) return false;
+    if (KODE_FILTER && m.kodeCabang !== KODE_FILTER) return false;
     if (!keyword) return true;
     var gabungan = (m.namaMerchant + ' ' + m.namaCabang + ' ' + m.area + ' ' + m.kodeCabang).toLowerCase();
     return gabungan.indexOf(keyword) !== -1;
   });
 
-  // Ringkasan selalu dihitung dari SEMUA data (bukan hasil filter pencarian),
-  // supaya angka ringkasan konsisten walau lagi nyari/filter status tertentu.
-  var proses = 0, sudah = 0, done = 0;
-  DATA_ALL.forEach(function(m) {
-    if (m.status === 'Proses') proses++;
-    else if (m.status === 'Sudah LVM') sudah++;
-    else if (m.status === 'Done Akuisisi') done++;
+  // Ringkasan dihitung dari cakupan area/cabang yang dipilih (bukan hasil
+  // pencarian/status), supaya angkanya tetap relevan dengan scope yang dilihat.
+  var cakupan = DATA_ALL.filter(function(m) {
+    if (AREA_FILTER && m.area !== AREA_FILTER) return false;
+    if (KODE_FILTER && m.kodeCabang !== KODE_FILTER) return false;
+    return true;
   });
-  document.getElementById('statTotal').textContent = DATA_ALL.length;
-  document.getElementById('statProses').textContent = proses;
-  document.getElementById('statSudahLVM').textContent = sudah;
+  var kunjungan = 0, done = 0, menolak = 0, tutup = 0;
+  cakupan.forEach(function(m) {
+    if (m.status === 'Done Konversi to LVM') done++;
+    else if (m.status === 'Merchant Menolak') menolak++;
+    else if (m.status === 'Merchant Tutup') tutup++;
+    else kunjungan++;
+  });
+  document.getElementById('statTotal').textContent = cakupan.length;
+  document.getElementById('statKunjungan').textContent = kunjungan;
   document.getElementById('statDone').textContent = done;
+  document.getElementById('statMenolak').textContent = menolak;
+  document.getElementById('statTutup').textContent = tutup;
 
   var wrap = document.getElementById('listPipeline');
   if (!filtered.length) {
@@ -333,19 +515,101 @@ function render() {
   }
 
   wrap.innerHTML = filtered.map(function(m) {
-    var infoBaris = KODE_FILTER
-      ? ''
-      : '<div class="list-item-info">' + m.area + ' · ' + m.namaCabang + ' (' + m.kodeCabang + ')</div>';
+    var infoBaris = '<div class="list-item-info">' + m.area + ' · ' + m.namaCabang + ' (' + m.kodeCabang + ')</div>';
+    var alamatGabungan = [m.alamat, m.kota].filter(function(v) { return v && v !== '-'; }).join(', ');
+    var alamatBaris = alamatGabungan ? '<div class="list-item-alamat">' + escHtml(alamatGabungan) + '</div>' : '';
     return '' +
-      '<div class="list-item">' +
+      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(m.namaCabang) + '" data-alamat="' + escAttr(alamatGabungan) + '">' +
         '<div class="list-item-top">' +
-          '<span class="list-item-nama">' + m.namaMerchant + '</span>' +
-          '<span class="badge ' + badgeClassFor(m.status) + '">' + m.status + '</span>' +
+          '<span class="list-item-nama">' + escHtml(m.namaMerchant) + '</span>' +
+          '<span class="badge ' + badgeClassFor(m.status) + '">' + escHtml(m.status) + '</span>' +
         '</div>' +
         infoBaris +
-        '<div class="list-item-tgl">Update terakhir: ' + m.tanggalUpdate + '</div>' +
+        alamatBaris +
+        '<div class="list-item-tgl">Update terakhir: ' + escHtml(m.tanggalUpdate) + '</div>' +
       '</div>';
   }).join('');
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return escHtml(s).replace(/"/g,'&quot;');
+}
+
+// ── Modal update status ──────────────────────────────────────────
+var STATUS_VALID = ['Kunjungan Awal', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup'];
+
+function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat) {
+  MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant };
+  document.getElementById('modalMerchant').textContent = namaMerchant;
+  document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
+  document.getElementById('modalAlamat').textContent = alamat || '';
+  // Data lama mungkin masih pakai status sebelum migrasi (mis. "Proses");
+  // kalau tidak cocok salah satu opsi baru, default ke tahap paling awal.
+  document.getElementById('modalStatus').value = STATUS_VALID.indexOf(statusSaatIni) !== -1
+    ? statusSaatIni
+    : 'Kunjungan Awal';
+  document.getElementById('modalError').classList.remove('show');
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function tutupModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  MODAL_TARGET = null;
+}
+
+function simpanStatus() {
+  if (!MODAL_TARGET) return;
+  var statusBaru = document.getElementById('modalStatus').value;
+  var btn = document.getElementById('modalSave');
+  var errBox = document.getElementById('modalError');
+  errBox.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+
+  var params = new URLSearchParams({
+    action       : 'updateStatus',
+    kodeCabang   : MODAL_TARGET.kodeCabang,
+    namaMerchant : MODAL_TARGET.namaMerchant,
+    status       : statusBaru
+  });
+
+  fetch(APPS_SCRIPT_URL + '?' + params.toString())
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Simpan';
+      if (!res.success) {
+        errBox.textContent = res.error || 'Gagal menyimpan. Coba lagi.';
+        errBox.classList.add('show');
+        return;
+      }
+      // Update data lokal supaya list & ringkasan langsung mencerminkan perubahan
+      DATA_ALL.forEach(function(m) {
+        if (m.kodeCabang === MODAL_TARGET.kodeCabang && m.namaMerchant === MODAL_TARGET.namaMerchant) {
+          m.status = statusBaru;
+          m.tanggalUpdate = 'Baru saja';
+        }
+      });
+      tutupModal();
+      render();
+      toast('Status berhasil diperbarui!');
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Simpan';
+      errBox.textContent = 'Gagal menyimpan: ' + err.message;
+      errBox.classList.add('show');
+    });
+}
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2500);
 }
 
 function tampilkanError(msg) {

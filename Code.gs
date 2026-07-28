@@ -22,8 +22,8 @@ var CONFIG = {
   NAMA_SHEET_PIPELINE: "Pipeline EDC to LVM"   // Nama tab pipeline konversi EDC to LVM
 };
 
-// Tahapan status progress konversi EDC to LVM yang valid.
-var STATUS_EDC_LVM_VALID = ["Proses", "Sudah LVM", "Done Akuisisi"];
+// Tahapan status progress pipeline akuisisi merchant yang valid.
+var STATUS_EDC_LVM_VALID = ["Kunjungan Awal", "Done Konversi to LVM", "Merchant Menolak", "Merchant Tutup"];
 
 /**
  * Semua request dari GitHub Pages masuk ke sini via GET.
@@ -76,6 +76,26 @@ function doGet(e) {
       return jsonResponse({ data: pipelineList });
     } catch (err) {
       return jsonResponse({ data: [], error: err.message });
+    }
+  }
+
+  // ── UPDATE STATUS: update status progress satu merchant pipeline,
+  //    dipanggil langsung dari pipeline.html saat admin klik merchant
+  //    lalu pilih status baru di modal ──
+  if (action === 'updateStatus') {
+    try {
+      var ssUpd = SpreadsheetApp.getActiveSpreadsheet();
+      var kodeCabangUpd  = e.parameter.kodeCabang  || '';
+      var namaMerchantUpd = e.parameter.namaMerchant || '';
+      var statusBaruUpd   = e.parameter.status        || '';
+      var berhasilUpd = updatePipelineStatus(ssUpd, kodeCabangUpd, namaMerchantUpd, statusBaruUpd);
+      if (berhasilUpd) {
+        return jsonResponse({ success: true });
+      } else {
+        return jsonResponse({ success: false, error: 'Merchant tidak ditemukan atau status tidak valid.' });
+      }
+    } catch (err) {
+      return jsonResponse({ success: false, error: err.message });
     }
   }
 
@@ -528,7 +548,7 @@ function getOrCreateSheetPipeline(ss) {
   if (!sheet) {
     sheet = ss.insertSheet(CONFIG.NAMA_SHEET_PIPELINE);
     var headers = [
-      'Kode Cabang', 'Nama Cabang', 'Area', 'Nama Merchant EDC',
+      'Kode Cabang', 'Nama Cabang', 'Area', 'Nama Merchant EDC', 'Alamat', 'Kota / Kab',
       'Status Progress', 'Tanggal Update Terakhir', 'Catatan'
     ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -578,7 +598,7 @@ function getMerchantEDCByCabang(kodeCabang) {
     if (kodeBaris === kodeCari && namaMerchant) {
       hasil.push({
         namaMerchant  : namaMerchant,
-        status        : data[i][idxStatus] || 'Proses',
+        status        : data[i][idxStatus] || 'Kunjungan Awal',
         tanggalUpdate : data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '-'
       });
     }
@@ -606,6 +626,8 @@ function getPipelineAll(kodeCabangFilter) {
   var idxNama      = headers.indexOf('Nama Cabang');
   var idxArea      = headers.indexOf('Area');
   var idxMerchant  = headers.indexOf('Nama Merchant EDC');
+  var idxAlamat    = headers.indexOf('Alamat');
+  var idxKota      = headers.indexOf('Kota / Kab');
   var idxStatus    = headers.indexOf('Status Progress');
   var idxTgl       = headers.indexOf('Tanggal Update Terakhir');
   var idxCatatan   = headers.indexOf('Catatan');
@@ -623,7 +645,9 @@ function getPipelineAll(kodeCabangFilter) {
       namaCabang    : data[i][idxNama] || '-',
       area          : data[i][idxArea] || '-',
       namaMerchant  : namaMerchant,
-      status        : data[i][idxStatus] || 'Proses',
+      alamat        : idxAlamat !== -1 ? (data[i][idxAlamat] || '-') : '-',
+      kota          : idxKota   !== -1 ? (data[i][idxKota]   || '-') : '-',
+      status        : data[i][idxStatus] || 'Kunjungan Awal',
       tanggalUpdate : data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '-',
       catatan       : idxCatatan !== -1 ? (data[i][idxCatatan] || '-') : '-'
     });
@@ -675,6 +699,57 @@ function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru) {
     }
   }
   return false;
+}
+
+/**
+ * Jalankan SEKALI dari Apps Script Editor setelah update status pipeline
+ * (skema lama → Kunjungan Awal/Done Konversi to LVM/Merchant Menolak/
+ * Merchant Tutup), supaya baris-baris lama di sheet "Pipeline EDC to LVM"
+ * yang masih pakai istilah status sebelumnya ("Proses", "Sudah LVM",
+ * "DONE KONVERSI TO LVM" huruf kapital semua, dst.) ikut termigrasi ke
+ * istilah baru.
+ * Aman dijalankan berkali-kali — baris yang sudah pakai status baru dilewati.
+ */
+function migrasiStatusPipeline() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG.NAMA_SHEET_PIPELINE);
+  if (!sheet) {
+    beriTahu('Sheet "' + CONFIG.NAMA_SHEET_PIPELINE + '" tidak ditemukan!');
+    return;
+  }
+
+  var PETA_MIGRASI = {
+    'Proses'               : 'Kunjungan Awal',
+    'Sudah LVM'            : 'Done Konversi to LVM',
+    'Done Akuisisi'        : 'Done Konversi to LVM',
+    'DONE KONVERSI TO LVM' : 'Done Konversi to LVM'
+  };
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) {
+    beriTahu('Sheet "' + CONFIG.NAMA_SHEET_PIPELINE + '" belum ada data.');
+    return;
+  }
+
+  var headers   = data[0];
+  var idxStatus = headers.indexOf('Status Progress');
+  if (idxStatus === -1) {
+    beriTahu('Kolom "Status Progress" tidak ditemukan di sheet.');
+    return;
+  }
+
+  var jumlahDiubah = 0;
+  for (var i = 1; i < data.length; i++) {
+    var statusLama = String(data[i][idxStatus] || '').trim();
+    if (PETA_MIGRASI.hasOwnProperty(statusLama)) {
+      sheet.getRange(i + 1, idxStatus + 1).setValue(PETA_MIGRASI[statusLama]);
+      jumlahDiubah++;
+    }
+  }
+
+  beriTahu(jumlahDiubah > 0
+    ? '✅ ' + jumlahDiubah + ' baris berhasil dimigrasikan ke status baru.'
+    : '✅ Tidak ada baris dengan status lama — semua sudah pakai istilah baru.');
 }
 
 /**
