@@ -371,9 +371,9 @@
     </div>
 
     <!-- Link ke Pipeline EDC to LVM -->
-    <a id="linkPipelineForm" href="pipeline.html" style="display:none;margin:16px 0 0;padding:16px;border-radius:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;text-decoration:none;align-items:center;justify-content:space-between;gap:10px;">
+    <a id="linkPipelineForm" href="pipeline.html" target="_blank" rel="noopener" style="display:none;margin:16px 0 0;padding:16px;border-radius:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;text-decoration:none;align-items:center;justify-content:space-between;gap:10px;">
       <span style="font-weight:700;font-size:14px;">🔄 Update Progress Konversi EDC to LVM</span>
-      <span style="font-size:12px;opacity:.75;">Kunjungan hari ini otomatis masuk ke laporan →</span>
+      <span style="font-size:12px;opacity:.75;">Buka di tab baru — isian form ini tidak akan hilang →</span>
     </a>
 
     <!-- Kendala & Keterangan -->
@@ -524,11 +524,6 @@ var DATA_CABANG = {
 
 // ── Init ────────────────────────────────────────────────────────
 window.onload = function() {
-  // Set tanggal hari ini
-  var d = new Date();
-  document.getElementById('tanggalLaporan').value =
-    d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-
   // Isi dropdown Area
   var sel = document.getElementById('selectArea');
   Object.keys(DATA_CABANG).sort().forEach(function(area) {
@@ -541,7 +536,77 @@ window.onload = function() {
   ['jumlahLVM','jumlahEDC','jumlahEDCPOT'].forEach(function(id) {
     document.getElementById(id).addEventListener('input', updateTotal);
   });
+
+  // Isi draft yang tersimpan (kalau ada) — kalau tidak ada draft, baru set
+  // tanggal hari ini sebagai default.
+  if (!pemuatDraft()) {
+    var d = new Date();
+    document.getElementById('tanggalLaporan').value =
+      d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
 };
+
+// ── Draft otomatis ──────────────────────────────────────────────
+// Supaya isian form TIDAK HILANG kalau user pindah ke tab Pipeline (via
+// tombol "Update Progress Konversi EDC to LVM") lalu balik lagi ke tab
+// form ini — atau kalau tab-nya sempat ke-reload. Disimpan ke
+// sessionStorage tiap ada perubahan input, dan dihapus begitu laporan
+// berhasil disubmit.
+var DRAFT_KEY = 'draftLaporanTBR';
+var FIELD_DRAFT_SEDERHANA = [
+  'tanggalLaporan', 'jumlahLVM', 'jumlahEDC', 'jumlahEDCPOT',
+  'jumlahPemasanganLVM', 'jumlahRetensiEDC',
+  'totalLeadsCakra', 'totalKunjunganCakra', 'gapCakra',
+  'jumlahTransaksiLivinFood', 'kendala', 'keterangan'
+];
+
+function simpanDraft() {
+  var draft = { area: document.getElementById('areaValue').value, kodeCabang: document.getElementById('kodeCabang').value };
+  FIELD_DRAFT_SEDERHANA.forEach(function(id) {
+    draft[id] = document.getElementById(id).value;
+  });
+  draft.namaMerchantLivinFood = document.getElementById('namaMerchantLivinFood').value;
+  try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) { /* storage penuh/nonaktif, abaikan */ }
+}
+
+function hapusDraft() {
+  try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) { /* abaikan */ }
+}
+
+// Return true kalau ada draft yang berhasil dipulihkan.
+function pemuatDraft() {
+  var raw;
+  try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) { return false; }
+  if (!raw) return false;
+
+  var draft;
+  try { draft = JSON.parse(raw); } catch (e) { return false; }
+
+  if (draft.area) {
+    document.getElementById('selectArea').value = draft.area;
+    document.getElementById('selectArea').dispatchEvent(new Event('change'));
+  }
+  if (draft.kodeCabang) {
+    document.getElementById('selectCabang').value = draft.kodeCabang;
+    document.getElementById('selectCabang').dispatchEvent(new Event('change'));
+  }
+
+  FIELD_DRAFT_SEDERHANA.forEach(function(id) {
+    if (draft[id] !== undefined) document.getElementById(id).value = draft[id];
+  });
+  if (draft.namaMerchantLivinFood) {
+    document.getElementById('namaMerchantLivinFood').value = draft.namaMerchantLivinFood;
+  }
+
+  updateTotal();
+  return true;
+}
+
+// Simpan draft tiap ada perubahan di dalam form manapun (delegasi, jadi
+// otomatis nyakup semua field termasuk yang muncul belakangan seperti
+// dropdown merchant Livin' Food).
+document.getElementById('formLaporan').addEventListener('input', simpanDraft);
+document.getElementById('formLaporan').addEventListener('change', simpanDraft);
 
 // ── Data Merchant per Area ───────────────────────────────────────
 // ── Kode cabang eligible Livin' Food ────────────────────────────
@@ -734,6 +799,7 @@ document.getElementById('formLaporan').addEventListener('submit', function(ev) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success && data.idLaporan) {
+        hapusDraft();
         window.location.href = 'laporan.html?id=' + data.idLaporan;
       } else {
         throw new Error(data.error || 'Respons tidak valid dari server.');

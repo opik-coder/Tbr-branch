@@ -211,6 +211,24 @@
       cursor: pointer; box-shadow: 0 12px 26px -12px rgba(43,79,214,.7);
     }
     .modal-save:disabled { opacity: .6; cursor: not-allowed; }
+    .wa-box {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: rgba(255,255,255,.85);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 260px;
+      overflow-y: auto;
+      cursor: pointer;
+      user-select: all;
+      transition: background 0.2s;
+    }
+    .wa-box:hover { background: rgba(255,255,255,.07); }
 
     #toast {
       position: fixed;
@@ -343,24 +361,38 @@
     <div class="modal-sub" id="modalCabang">-</div>
     <div class="modal-sub" id="modalAlamat" style="margin-top:-14px;"></div>
 
-    <label class="field-label">Status Progress</label>
-    <select id="modalStatus" class="select-input">
-      <option value="Target">Target</option>
-      <option value="Done Konversi to LVM">Done Konversi to LVM</option>
-      <option value="Merchant Menolak">Merchant Menolak</option>
-      <option value="Merchant Tutup">Merchant Tutup</option>
-      <option value="Perlu Kunjungan MTI">Perlu Kunjungan MTI</option>
-    </select>
+    <div id="modalFormGroup">
+      <label class="field-label">Status Progress</label>
+      <select id="modalStatus" class="select-input">
+        <option value="Target">Target</option>
+        <option value="Done Konversi to LVM">Done Konversi to LVM</option>
+        <option value="Merchant Menolak">Merchant Menolak</option>
+        <option value="Merchant Tutup">Merchant Tutup</option>
+        <option value="Perlu Kunjungan MTI">Perlu Kunjungan MTI</option>
+      </select>
 
-    <div id="fieldMid" style="display:none;margin-top:16px;">
-      <label class="field-label">MID <span style="color:#ff8fa3;">*</span></label>
-      <input type="text" id="modalMid" class="search-input" placeholder="Masukkan MID" style="margin-bottom:0;">
+      <div id="fieldMid" style="display:none;margin-top:16px;">
+        <label class="field-label">MID <span style="color:#ff8fa3;">*</span></label>
+        <input type="text" id="modalMid" class="search-input" placeholder="Masukkan MID" style="margin-bottom:0;">
+      </div>
+      <div class="modal-error" id="modalError">Gagal menyimpan. Coba lagi.</div>
+
+      <div class="modal-actions">
+        <button class="modal-cancel" id="modalCancel" type="button">Batal</button>
+        <button class="modal-save" id="modalSave" type="button">Simpan</button>
+      </div>
     </div>
-    <div class="modal-error" id="modalError">Gagal menyimpan. Coba lagi.</div>
 
-    <div class="modal-actions">
-      <button class="modal-cancel" id="modalCancel" type="button">Batal</button>
-      <button class="modal-save" id="modalSave" type="button">Simpan</button>
+    <div id="modalWaGroup" style="display:none;">
+      <label class="field-label">Wording Laporan WhatsApp</label>
+      <div class="wa-box" id="modalWaText" onclick="copyModalWa()"></div>
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button class="modal-cancel" id="modalWaClose" type="button">Tutup</button>
+        <div style="display:flex;gap:10px;">
+          <button class="modal-cancel" id="modalWaCopy" type="button" style="text-decoration:underline;">Copy</button>
+          <a class="modal-save" id="modalWaSend" href="#" target="_blank" style="text-decoration:none;">Buka WhatsApp</a>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -378,7 +410,131 @@ var DATA_ALL = [];
 var KODE_FILTER = '';
 var AREA_FILTER = '';
 var STATUS_FILTER = '';
-var MODAL_TARGET = null; // { kodeCabang, namaMerchant } sedang diedit
+var MODAL_TARGET = null; // { kodeCabang, namaMerchant, namaCabang, area } sedang diedit
+
+// ── Data Master Cabang (sama dengan index.html) ──────────────────
+// Dipakai supaya filter Area selalu pakai 7 area resmi, bukan kolom
+// "Area" di sheet Pipeline yang kadang keisi manual dengan nama cabang
+// (data kotor) — lihat kodeToArea() di bawah.
+var DATA_CABANG = {
+  "Area Manado": [
+    {kode:"15000",nama:"KC Manado Dotulolong Lasut"},{kode:"15001",nama:"KCP Manado Toar"},
+    {kode:"15002",nama:"KC Kotamobagu"},{kode:"15003",nama:"KC Bitung"},
+    {kode:"15004",nama:"KC Gorontalo"},{kode:"15005",nama:"KC Tahuna"},
+    {kode:"15006",nama:"KCP Manado Sam Ratulangi"},{kode:"15007",nama:"KCP Manado Sudirman"},
+    {kode:"15008",nama:"KCP Limboto"},{kode:"15010",nama:"KCP Manado Boulevard"},
+    {kode:"15011",nama:"KCP Marisa"},{kode:"15012",nama:"KCP Tomohon"},
+    {kode:"15015",nama:"KCP Amurang"},{kode:"15017",nama:"KCP Manado Bahu"},
+    {kode:"15018",nama:"KCP Manado Pasar Calaca"},{kode:"15019",nama:"KCP Girian"},
+    {kode:"15020",nama:"KCP Manado Paal Dua"},{kode:"15021",nama:"KCP Airmadidi"},
+    {kode:"15022",nama:"KCP Manado Town Square 3"},{kode:"15075",nama:"KCP Manado Airmadidi"},
+    {kode:"15076",nama:"KCP Manado Ratahan"},{kode:"15078",nama:"KCP Gorontalo Kwandang"},
+    {kode:"15079",nama:"KCP Paguyaman"},{kode:"15081",nama:"KCP Manado Paniki"},
+    {kode:"15082",nama:"KCP Manado Langowan"},{kode:"15083",nama:"KCP Gorontalo Agus Salim"},
+    {kode:"15085",nama:"KCP Tilamuta"},{kode:"15086",nama:"KCP Tondano"},
+    {kode:"15088",nama:"KCP Gorontalo Isimu"},{kode:"15089",nama:"KCP Manado Ringroad"},
+    {kode:"15090",nama:"KCP Bone Bolango Kabila"},{kode:"15091",nama:"KCP Siau"},
+    {kode:"15096",nama:"KCP Boalemo Wonosari"},{kode:"15097",nama:"KCP Lolak"}
+  ],
+  "Area Palu": [
+    {kode:"15100",nama:"KC Palu Sam Ratulangi"},{kode:"15101",nama:"KCP Palu Imam Bonjol"},
+    {kode:"15102",nama:"KCP Palu Hasanuddin"},{kode:"15103",nama:"KCP Donggala"},
+    {kode:"15104",nama:"KC Luwuk"},{kode:"15105",nama:"KCP Poso"},
+    {kode:"15106",nama:"KC Toli Toli"},{kode:"15107",nama:"KCP Parigi"},
+    {kode:"15109",nama:"KCP Ampana"},{kode:"15110",nama:"KCP Palu Basuki Rahmat"},
+    {kode:"15111",nama:"KCP Morowali Bahodopi"},{kode:"15112",nama:"KCP Tawaeli"},
+    {kode:"15175",nama:"KCP Pasangkayu"},{kode:"15177",nama:"KCP Toili"},
+    {kode:"15178",nama:"KCP Palu Moh Yamin"},{kode:"15179",nama:"KCP Palu Dewi Sartika"},
+    {kode:"15180",nama:"KCP Tentena"},{kode:"15181",nama:"KCP Kotaraya"},
+    {kode:"15182",nama:"KCP Buol"},{kode:"15184",nama:"KCP Parigi Tolai"},
+    {kode:"15185",nama:"KCP Banggai Bunta"},{kode:"15186",nama:"KCP Banggai Laut"},
+    {kode:"15187",nama:"KCP Morowali Beteleme"},{kode:"15188",nama:"KCP Toli Toli Soni"},
+    {kode:"15189",nama:"KCP Morowali Bungku"},{kode:"15190",nama:"KCP Banggai Kepulauan"},
+    {kode:"15191",nama:"KCP Sigi"}
+  ],
+  "Area Makassar Kartini": [
+    {kode:"15200",nama:"KC Makassar Kartini"},{kode:"15201",nama:"KCP Makassar Sulawesi"},
+    {kode:"15202",nama:"KCP Makassar Cokroaminoto"},{kode:"15203",nama:"KCP Semen Tonasa"},
+    {kode:"15213",nama:"KCP Makassar Slamet Riyadi"},{kode:"15216",nama:"KCP Makassar Daya"},
+    {kode:"15220",nama:"KCP Makassar Andalas"},{kode:"15221",nama:"KCP Makassar Veteran"},
+    {kode:"15225",nama:"KCP Makassar R.S. Stella Maris"},{kode:"15237",nama:"KCP Makassar Universitas Hasanuddin"},
+    {kode:"15238",nama:"KCP Makassar Pelabuhan Indonesia"},{kode:"15242",nama:"KCP Makassar Pasar Sentral"},
+    {kode:"15243",nama:"KCP Makassar Sombaopu"},{kode:"15244",nama:"KCP Pangkep Hasanuddin"},
+    {kode:"15245",nama:"KCP Makassar Pusat Grosir Daya"},{kode:"15246",nama:"KCP Makassar Perintis Kemerdekaan"},
+    {kode:"15248",nama:"KCP Maros Sudirman"},{kode:"15249",nama:"KCP Makassar Urip Sumoharjo"},
+    {kode:"15250",nama:"KCP Makassar Monginsidi"},{kode:"15251",nama:"KCP Makassar CPI"},
+    {kode:"15252",nama:"KCP Makassar Latimojong"},{kode:"15269",nama:"KCP Maros Camba"},
+    {kode:"15271",nama:"KCP Makassar Pannampu"},{kode:"15291",nama:"KCP Makassar BTP"},
+    {kode:"15293",nama:"KCP Makassar Paccerakkang"},{kode:"15297",nama:"KCP Makassar Sudiang"}
+  ],
+  "Area Kendari": [
+    {kode:"16200",nama:"KC Kendari Mesjid Agung"},{kode:"16201",nama:"KCP Kendari Beach"},
+    {kode:"16202",nama:"KCP Bau Bau"},{kode:"16203",nama:"KC Pomalaa"},
+    {kode:"16204",nama:"KCP Kolaka"},{kode:"16205",nama:"KCP Wua Wua"},
+    {kode:"16206",nama:"KCP Kolaka Utara"},{kode:"16207",nama:"KCP Kendari Bundaran Anduonohu"},
+    {kode:"16208",nama:"KCP Kendari Lepo-Lepo"},{kode:"16210",nama:"KCP Morosi"},
+    {kode:"16275",nama:"KCP Kendari Andunouhu"},{kode:"16276",nama:"KCP Tinanggea"},
+    {kode:"16277",nama:"KCP Pasarwajo"},{kode:"16278",nama:"KCP Molawe"},
+    {kode:"16279",nama:"KCP Raha"},{kode:"16280",nama:"KCP Bombana"},
+    {kode:"16281",nama:"KCP Unaaha"},{kode:"16282",nama:"KCP Buton Lombe"},
+    {kode:"16283",nama:"KCP Baubau Wolio"},{kode:"16284",nama:"KCP Rate Rate"},
+    {kode:"16285",nama:"KCP Lapai"}
+  ],
+  "Area Pare Pare": [
+    {kode:"17000",nama:"KC Pare Pare"},{kode:"17001",nama:"KCP Pinrang"},
+    {kode:"17002",nama:"KCP Polewali Mandar"},{kode:"17003",nama:"KCP Pare-Pare Pattompo"},
+    {kode:"17004",nama:"KCP Mamuju"},{kode:"17005",nama:"KC Watampone"},
+    {kode:"17006",nama:"KCP Sengkang"},{kode:"17007",nama:"KC Palopo"},
+    {kode:"17008",nama:"KCP Rantepao"},{kode:"17009",nama:"KC Soroako"},
+    {kode:"17010",nama:"KCP Sidrap Sudirman"},{kode:"17011",nama:"KCP Sinjai Pasar Sentral"},
+    {kode:"17015",nama:"KCP Kahu"},{kode:"17016",nama:"KCP Majene"},
+    {kode:"17075",nama:"KCP Topoyo"},{kode:"17076",nama:"KCP Sidrap"},
+    {kode:"17077",nama:"KCP Siwa"},{kode:"17078",nama:"KCP Soppeng"},
+    {kode:"17079",nama:"KCP Belopa"},{kode:"17080",nama:"KCP Masamba"},
+    {kode:"17082",nama:"KCP Barru"},{kode:"17083",nama:"KCP Tomoni"},
+    {kode:"17084",nama:"KCP Malili"},{kode:"17085",nama:"KCP Polewali Mandar Pekkabata"},
+    {kode:"17087",nama:"KCP Toraja Makale"},{kode:"17088",nama:"KCP Enrekang Pasar Sudu"},
+    {kode:"17091",nama:"KCP Bone Bone"}
+  ],
+  "Area Makassar Ratulangi": [
+    {kode:"17400",nama:"KC Makassar Sam Ratulangi"},{kode:"17401",nama:"KCP Makassar Panakkukang"},
+    {kode:"17402",nama:"KCP Makassar Hertasning"},{kode:"17403",nama:"KCP Sungguminasa"},
+    {kode:"17404",nama:"KCP Makassar Cendrawasih"},{kode:"17406",nama:"KCP Makassar Toddopuli"},
+    {kode:"17407",nama:"KCP Bulukumba"},{kode:"17408",nama:"KCP Makassar Pettarani"},
+    {kode:"17409",nama:"KCP Makassar Veteran Selatan"},{kode:"17410",nama:"KCP Bantaeng Pahlawan"},
+    {kode:"17411",nama:"KCP Jeneponto"},{kode:"17451",nama:"KCP Selayar"},
+    {kode:"17452",nama:"KCP Gowa Malino"},{kode:"17453",nama:"KCP Bantaeng Tanetea"},
+    {kode:"17454",nama:"KCP Takalar"},{kode:"17455",nama:"KCP Limbung"},
+    {kode:"17456",nama:"KCP Hartaco"},{kode:"17457",nama:"KCP Antang"},
+    {kode:"17458",nama:"KCP Gowa Pallangga"},{kode:"17459",nama:"KCP Gowa Balang-Balang"},
+    {kode:"17462",nama:"KCP Bulukumba Tanete"},{kode:"17463",nama:"KCP Barombong"}
+  ],
+  "Area Maluku": [
+    {kode:"18600",nama:"KC Ambon Pantai Mardika"},{kode:"18601",nama:"KC Ambon Pattimura"},
+    {kode:"18602",nama:"KC Ternate"},{kode:"18603",nama:"KCP Ambon Paso"},
+    {kode:"18604",nama:"KCP Ambon Masohi"},{kode:"18605",nama:"KCP Ambon Namlea"},
+    {kode:"18607",nama:"KCP Maluku Tenggara"},{kode:"18608",nama:"KCP Ternate Pahlawan Revolusi"},
+    {kode:"18609",nama:"KCP Buli"},{kode:"18610",nama:"KCP Tobelo"},
+    {kode:"18611",nama:"KCP Sofifi"},{kode:"18612",nama:"KCP Ambon Universitas Pattimura"},
+    {kode:"18613",nama:"KCP Indonesia Weda Bay Industrial Park"},{kode:"18651",nama:"KCP Bula"},
+    {kode:"18652",nama:"KCP Gemba"},{kode:"18654",nama:"KCP Waeapo"},
+    {kode:"18655",nama:"KCP Wayame"},{kode:"18656",nama:"KCP Saumlaki"},
+    {kode:"18657",nama:"KCP Ternate Bastiong"},{kode:"18658",nama:"KCP Labuha"},
+    {kode:"18659",nama:"KCP Weda"},{kode:"18660",nama:"KCP Jailolo"},
+    {kode:"18661",nama:"KCP Obi"}
+  ]
+};
+
+var KODE_TO_AREA = {};
+Object.keys(DATA_CABANG).forEach(function(area) {
+  DATA_CABANG[area].forEach(function(c) { KODE_TO_AREA[c.kode] = area; });
+});
+
+// Area resmi (7 area baku) berdasarkan Kode Cabang, bukan kolom "Area" di
+// sheet Pipeline yang kadang keisi manual dengan nama cabang.
+function areaResmi(m) {
+  return KODE_TO_AREA[m.kodeCabang] || m.area || '-';
+}
 
 window.onload = function() {
   var params = new URLSearchParams(window.location.search);
@@ -459,7 +615,7 @@ function tampilkanData() {
   document.getElementById('listPipeline').addEventListener('click', function(ev) {
     var item = ev.target.closest('.list-item');
     if (!item) return;
-    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid);
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area);
   });
 
   document.getElementById('modalStatus').addEventListener('change', toggleFieldMid);
@@ -468,18 +624,21 @@ function tampilkanData() {
     if (ev.target === this) tutupModal();
   });
   document.getElementById('modalSave').addEventListener('click', simpanStatus);
+  document.getElementById('modalWaClose').addEventListener('click', tutupModal);
+  document.getElementById('modalWaCopy').addEventListener('click', copyModalWa);
 }
 
 // ── Isi dropdown Area & Cabang dari data pipeline yang sudah dimuat ──
 function isiFilterAreaCabang() {
   var areaSel = document.getElementById('selectArea');
-  var areas = Array.from(new Set(DATA_ALL.map(function(m) { return m.area; })
-    .filter(function(a) { return a && a !== '-'; }))).sort();
+  // Selalu pakai 7 area resmi dari DATA_CABANG (bukan kolom "Area" di sheet
+  // Pipeline, yang kadang keisi manual dengan nama cabang / data kotor).
+  var areas = Object.keys(DATA_CABANG).sort();
   areaSel.innerHTML = '<option value="">Semua Area</option>' +
     areas.map(function(a) { return '<option value="' + a + '">' + a + '</option>'; }).join('');
 
   if (KODE_FILTER && DATA_ALL.length) {
-    AREA_FILTER = DATA_ALL[0].area;
+    AREA_FILTER = areaResmi(DATA_ALL[0]);
     areaSel.value = AREA_FILTER;
   }
   isiSelectCabang();
@@ -487,7 +646,7 @@ function isiFilterAreaCabang() {
 
 function isiSelectCabang() {
   var cabangSel = document.getElementById('selectCabang');
-  var relevan = AREA_FILTER ? DATA_ALL.filter(function(m) { return m.area === AREA_FILTER; }) : DATA_ALL;
+  var relevan = AREA_FILTER ? DATA_ALL.filter(function(m) { return areaResmi(m) === AREA_FILTER; }) : DATA_ALL;
   var map = {};
   relevan.forEach(function(m) { map[m.kodeCabang] = m.namaCabang; });
   // Urutkan berdasarkan Kode Cabang (numerik kalau bisa, string sebagai fallback
@@ -518,17 +677,17 @@ function render() {
 
   var filtered = DATA_ALL.filter(function(m) {
     if (STATUS_FILTER && m.status !== STATUS_FILTER) return false;
-    if (AREA_FILTER && m.area !== AREA_FILTER) return false;
+    if (AREA_FILTER && areaResmi(m) !== AREA_FILTER) return false;
     if (KODE_FILTER && m.kodeCabang !== KODE_FILTER) return false;
     if (!keyword) return true;
-    var gabungan = (m.namaMerchant + ' ' + m.namaCabang + ' ' + m.area + ' ' + m.kodeCabang).toLowerCase();
+    var gabungan = (m.namaMerchant + ' ' + m.namaCabang + ' ' + areaResmi(m) + ' ' + m.kodeCabang).toLowerCase();
     return gabungan.indexOf(keyword) !== -1;
   });
 
   // Ringkasan dihitung dari cakupan area/cabang yang dipilih (bukan hasil
   // pencarian/status), supaya angkanya tetap relevan dengan scope yang dilihat.
   var cakupan = DATA_ALL.filter(function(m) {
-    if (AREA_FILTER && m.area !== AREA_FILTER) return false;
+    if (AREA_FILTER && areaResmi(m) !== AREA_FILTER) return false;
     if (KODE_FILTER && m.kodeCabang !== KODE_FILTER) return false;
     return true;
   });
@@ -554,11 +713,11 @@ function render() {
   }
 
   wrap.innerHTML = filtered.map(function(m) {
-    var infoBaris = '<div class="list-item-info">' + m.area + ' · ' + m.namaCabang + ' (' + m.kodeCabang + ')</div>';
+    var infoBaris = '<div class="list-item-info">' + escHtml(areaResmi(m)) + ' · ' + escHtml(m.namaCabang) + ' (' + escHtml(m.kodeCabang) + ')</div>';
     var alamatGabungan = [m.alamat, m.kota].filter(function(v) { return v && v !== '-'; }).join(', ');
     var alamatBaris = alamatGabungan ? '<div class="list-item-alamat">' + escHtml(alamatGabungan) + '</div>' : '';
     return '' +
-      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(m.namaCabang) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '">' +
+      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(m.namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '">' +
         '<div class="list-item-top">' +
           '<span class="list-item-nama">' + escHtml(m.namaMerchant) + '</span>' +
           '<span class="badge ' + badgeClassFor(m.status) + '">' + escHtml(m.status) + '</span>' +
@@ -580,8 +739,8 @@ function escAttr(s) {
 // ── Modal update status ──────────────────────────────────────────
 var STATUS_VALID = ['Target', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI'];
 
-function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid) {
-  MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant };
+function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area) {
+  MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-' };
   document.getElementById('modalMerchant').textContent = namaMerchant;
   document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
   document.getElementById('modalAlamat').textContent = alamat || '';
@@ -593,6 +752,8 @@ function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, 
     ? statusSaatIni
     : 'Target';
   document.getElementById('modalError').classList.remove('show');
+  document.getElementById('modalFormGroup').style.display = 'block';
+  document.getElementById('modalWaGroup').style.display = 'none';
   document.getElementById('modalOverlay').classList.add('show');
   toggleFieldMid();
 }
@@ -651,9 +812,9 @@ function simpanStatus() {
           m.tanggalUpdate = 'Baru saja';
         }
       });
-      tutupModal();
       render();
       toast('Status berhasil diperbarui!');
+      tampilkanWaPipeline(statusBaru, midValue);
     })
     .catch(function(err) {
       btn.disabled = false;
@@ -661,6 +822,56 @@ function simpanStatus() {
       errBox.textContent = 'Gagal menyimpan: ' + err.message;
       errBox.classList.add('show');
     });
+}
+
+// ── Tugas 1: wording laporan WA otomatis begitu update tersimpan ──
+var MODAL_WA_TEXT = '';
+
+function buatWaTeksPipeline(target, status, mid) {
+  var tgl = new Date();
+  var tglStr = String(tgl.getDate()).padStart(2, '0') + '/' +
+               String(tgl.getMonth() + 1).padStart(2, '0') + '/' + tgl.getFullYear();
+  var t = '';
+  t += 'Mohon izin update progress Pipeline Akuisisi Merchant:\n\n';
+  t += 'Tanggal : ' + tglStr + '\n';
+  t += 'Area    : ' + (target.area || '-') + '\n';
+  t += 'Cabang  : ' + target.namaCabang + ' (' + target.kodeCabang + ')\n\n';
+  t += '• Merchant : ' + target.namaMerchant + '\n';
+  t += '• Status   : ' + status + '\n';
+  if (status === 'Done Konversi to LVM' && mid) {
+    t += '• MID      : ' + mid + '\n';
+  }
+  t += '\nTerima kasih.';
+  return t;
+}
+
+function tampilkanWaPipeline(status, mid) {
+  MODAL_WA_TEXT = buatWaTeksPipeline(MODAL_TARGET, status, mid);
+  document.getElementById('modalWaText').textContent = MODAL_WA_TEXT;
+  document.getElementById('modalWaSend').href = 'https://wa.me/?text=' + encodeURIComponent(MODAL_WA_TEXT);
+  document.getElementById('modalFormGroup').style.display = 'none';
+  document.getElementById('modalWaGroup').style.display = 'block';
+}
+
+function copyModalWa() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(MODAL_WA_TEXT)
+      .then(function() { toast('Teks berhasil disalin!'); })
+      .catch(fallbackCopyModalWa);
+  } else {
+    fallbackCopyModalWa();
+  }
+}
+
+function fallbackCopyModalWa() {
+  var ta = document.createElement('textarea');
+  ta.value = MODAL_WA_TEXT;
+  ta.style.position = 'fixed'; ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); toast('Teks berhasil disalin!'); }
+  catch (e) { toast('Gagal salin. Tekan & tahan teks.'); }
+  document.body.removeChild(ta);
 }
 
 function toast(msg) {
