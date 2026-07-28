@@ -23,7 +23,7 @@ var CONFIG = {
 };
 
 // Tahapan status progress pipeline akuisisi merchant yang valid.
-var STATUS_EDC_LVM_VALID = ["Kunjungan Awal", "Done Konversi to LVM", "Merchant Menolak", "Merchant Tutup"];
+var STATUS_EDC_LVM_VALID = ["Target", "Done Konversi to LVM", "Merchant Menolak", "Merchant Tutup", "Perlu Kunjungan MTI"];
 
 /**
  * Semua request dari GitHub Pages masuk ke sini via GET.
@@ -138,13 +138,16 @@ function prosesSubmit(p) {
   var gapCakra             = Number(p.gapCakra)            || 0;
   var jumlahLivinFood      = Number(p.jumlahTransaksiLivinFood) || 0;
   var namaMerchantLivinFood = p.namaMerchantLivinFood || '-';
-  var namaMerchantEDCLVM   = p.namaMerchantEDCLVM   || '-';
-  var statusProgressEDCLVM = p.statusProgressEDCLVM || '-';
   var kendala          = p.kendala          || '-';
   var keterangan       = p.keterangan       || '-';
   var totalAkuisisi    = jumlahLVM + jumlahEDC + jumlahEDCPOT;
   var tanggalFormatted = formatTanggal(tanggal);
   var timestamp        = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MM/yyyy HH:mm:ss");
+
+  // Ambil OTOMATIS semua merchant Pipeline EDC to LVM milik cabang ini yang
+  // statusnya diupdate hari yang sama dengan tanggal laporan (lewat pipeline.html) —
+  // jadi tidak dibatasi cuma 1 merchant, semua kunjungan hari itu ikut kebawa.
+  var updatesEDCLVM = getPipelineUpdatesHariIni(kodeCabang, tanggal);
 
   // Generate ID unik
   var idLaporan = generateID(kodeCabang);
@@ -156,12 +159,21 @@ function prosesSubmit(p) {
     jumlahPemasLVM, jumlahRetensiEDC,
     totalLeadsCakra, totalKunjunganCakra, gapCakra,
     jumlahLivinFood, namaMerchantLivinFood,
-    namaMerchantEDCLVM, statusProgressEDCLVM,
+    updatesEDCLVM,
     kendala, keterangan
   );
 
   // URL laporan (di GitHub Pages) — diisi kosong, ditentukan di sisi frontend
   var linkLaporan = '';
+
+  // Ringkasan update EDC to LVM hari ini, buat ditulis ke sheet "Laporan Harian"
+  // (kolom lama dipertahankan supaya nggak perlu migrasi skema baru lagi).
+  var ringkasanMerchantEDCLVM = updatesEDCLVM.length
+    ? updatesEDCLVM.map(function (u) { return u.namaMerchant + ' (' + u.status + ')'; }).join('; ')
+    : '-';
+  var ringkasanStatusEDCLVM = updatesEDCLVM.length
+    ? updatesEDCLVM.length + ' merchant diupdate'
+    : '-';
 
   // Susun baris berdasarkan NAMA HEADER asli di sheet (bukan posisi tetap),
   // supaya aman walau urutan kolom "Jumlah Akuisisi EDC POT" berbeda-beda.
@@ -183,8 +195,8 @@ function prosesSubmit(p) {
     'Gap (sesuai Cakra)'      : gapCakra,
     "Jumlah Transaksi Livin' Food" : jumlahLivinFood,
     "Nama Merchant Livin' Food"    : namaMerchantLivinFood,
-    'Merchant EDC to LVM'          : namaMerchantEDCLVM,
-    'Status Progress EDC to LVM'   : statusProgressEDCLVM,
+    'Merchant EDC to LVM'          : ringkasanMerchantEDCLVM,
+    'Status Progress EDC to LVM'   : ringkasanStatusEDCLVM,
     'Kendala'                 : kendala,
     'Keterangan'              : keterangan,
     'ID Laporan'              : idLaporan,
@@ -207,17 +219,10 @@ function prosesSubmit(p) {
     }
   }
 
-  // Update status progress di Pipeline EDC to LVM (jika ada merchant yang diupdate)
-  if (namaMerchantEDCLVM && namaMerchantEDCLVM !== '-' && statusProgressEDCLVM && statusProgressEDCLVM !== '-') {
-    try {
-      var berhasilUpdate = updatePipelineStatus(ss, kodeCabang, namaMerchantEDCLVM, statusProgressEDCLVM);
-      if (!berhasilUpdate) {
-        Logger.log('Pipeline EDC to LVM: merchant tidak ditemukan — kode=' + kodeCabang + ' merchant=' + namaMerchantEDCLVM);
-      }
-    } catch (e) {
-      Logger.log('Update Pipeline EDC to LVM error: ' + e.message);
-    }
-  }
+  // Catatan: update status Pipeline EDC to LVM sekarang dilakukan LANGSUNG
+  // dari pipeline.html (action=updateStatus) saat merchant diklik & disimpan —
+  // bukan lagi lewat form laporan harian ini. Baris ini hanya MEMBACA hasil
+  // update yang sudah tersimpan di sheet (lihat updatesEDCLVM di atas).
 
   // Catat log
   catatLog(ss, idLaporan, tanggalFormatted, namaCabang, kodeCabang);
@@ -261,8 +266,13 @@ function cariLaporan(idLaporan) {
         gapCakra            : Number(row[headers.indexOf('Gap (sesuai Cakra)')])         || 0,
         jumlahTransaksiLivinFood : Number(row[headers.indexOf("Jumlah Transaksi Livin' Food")]) || 0,
         namaMerchantLivinFood    : row[headers.indexOf("Nama Merchant Livin' Food")] || '-',
-        namaMerchantEDCLVM   : row[headers.indexOf('Merchant EDC to LVM')]        || '-',
-        statusProgressEDCLVM : row[headers.indexOf('Status Progress EDC to LVM')] || '-',
+        // Diambil ULANG dari sheet Pipeline (bukan dibaca dari kolom ringkasan di
+        // sheet ini), supaya kalau ada update susulan buat tanggal yang sama,
+        // laporan.html tetap nampilin data terkini.
+        updatesEDCLVM : getPipelineUpdatesHariIni(
+          row[headers.indexOf('Kode Cabang')],
+          row[headers.indexOf('Tanggal Laporan')]
+        ),
         kendala             : row[headers.indexOf('Kendala')]            || '-',
         keterangan          : row[headers.indexOf('Keterangan')]         || '-',
         teksWA              : row[headers.indexOf('Teks WA')]            || ''
@@ -275,7 +285,7 @@ function cariLaporan(idLaporan) {
 // ============================================================
 // SUSUN TEKS WHATSAPP
 // ============================================================
-function susunTeksWA(tanggal, area, cabang, kode, lvm, edc, edcPot, total, plasLVM, retEDC, leadsCakra, kunjunganCakra, gapCakra, livinFood, namaMerchant, namaMerchantEDCLVM, statusProgressEDCLVM, kendala, keterangan) {
+function susunTeksWA(tanggal, area, cabang, kode, lvm, edc, edcPot, total, plasLVM, retEDC, leadsCakra, kunjunganCakra, gapCakra, livinFood, namaMerchant, updatesEDCLVM, kendala, keterangan) {
   var t = '';
   t += 'Mohon izin melaporkan hasil akuisisi harian:\n\n';
   t += 'Tanggal : ' + tanggal + '\n';
@@ -299,10 +309,16 @@ function susunTeksWA(tanggal, area, cabang, kode, lvm, edc, edcPot, total, plasL
     t += '• Merchant  : ' + namaMerchant + '\n';
   }
   t += '• Transaksi : ' + livinFood + '\n\n';
-  if (namaMerchantEDCLVM && namaMerchantEDCLVM !== '-') {
-    t += '🔄 Progress Konversi EDC to LVM:\n';
-    t += '• Merchant : ' + namaMerchantEDCLVM + '\n';
-    t += '• Status   : ' + statusProgressEDCLVM + '\n\n';
+  if (updatesEDCLVM && updatesEDCLVM.length) {
+    t += '🔄 Progress Konversi EDC to LVM (' + updatesEDCLVM.length + ' merchant):\n';
+    updatesEDCLVM.forEach(function (u) {
+      var baris = '• ' + u.namaMerchant + ' — ' + u.status;
+      if (u.status === 'Done Konversi to LVM' && u.mid && u.mid !== '-') {
+        baris += ' (MID: ' + u.mid + ')';
+      }
+      t += baris + '\n';
+    });
+    t += '\n';
   }
   t += 'Kendala    : ' + kendala + '\n';
   t += 'Keterangan : ' + keterangan + '\n\n';
@@ -604,7 +620,7 @@ function getMerchantEDCByCabang(kodeCabang) {
     if (kodeBaris === kodeCari && namaMerchant) {
       hasil.push({
         namaMerchant  : namaMerchant,
-        status        : data[i][idxStatus] || 'Kunjungan Awal',
+        status        : data[i][idxStatus] || 'Target',
         tanggalUpdate : data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '-'
       });
     }
@@ -654,10 +670,55 @@ function getPipelineAll(kodeCabangFilter) {
       namaMerchant  : namaMerchant,
       alamat        : idxAlamat !== -1 ? (data[i][idxAlamat] || '-') : '-',
       kota          : idxKota   !== -1 ? (data[i][idxKota]   || '-') : '-',
-      status        : data[i][idxStatus] || 'Kunjungan Awal',
+      status        : data[i][idxStatus] || 'Target',
       mid           : idxMid !== -1 ? (data[i][idxMid] || '-') : '-',
       tanggalUpdate : data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '-',
       catatan       : idxCatatan !== -1 ? (data[i][idxCatatan] || '-') : '-'
+    });
+  }
+  return hasil;
+}
+
+/**
+ * Ambil semua merchant di "Pipeline EDC to LVM" milik satu cabang yang
+ * "Tanggal Update Terakhir"-nya SAMA dengan tanggal laporan yang sedang
+ * disubmit. Ini yang bikin teks WA laporan harian otomatis nampilin
+ * SEMUA merchant yang statusnya diupdate hari itu (lewat pipeline.html),
+ * bukan cuma 1 merchant — jadi kalau cabang kunjungan 5 merchant dalam
+ * sehari dan update ke-5nya di pipeline.html, ke-5nya otomatis muncul
+ * di teks WA laporan harian tanpa perlu pilih manual di form.
+ */
+function getPipelineUpdatesHariIni(kodeCabang, tanggalLaporan) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG.NAMA_SHEET_PIPELINE);
+  if (!sheet) return [];
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return [];
+
+  var headers     = data[0];
+  var idxKode     = headers.indexOf('Kode Cabang');
+  var idxMerchant = headers.indexOf('Nama Merchant EDC');
+  var idxStatus   = headers.indexOf('Status Progress');
+  var idxMid      = headers.indexOf('MID');
+  var idxTgl      = headers.indexOf('Tanggal Update Terakhir');
+  if (idxKode === -1 || idxMerchant === -1 || idxTgl === -1) return [];
+
+  var kodeCari = String(kodeCabang || '').trim();
+  var tglCari  = formatTanggal(tanggalLaporan); // dd/MM/yyyy, sama format dgn Tanggal Update Terakhir
+
+  var hasil = [];
+  for (var i = 1; i < data.length; i++) {
+    var kodeBaris = String(data[i][idxKode] || '').trim();
+    if (kodeBaris !== kodeCari) continue;
+
+    var tglBaris = data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '';
+    if (!tglBaris || tglBaris !== tglCari) continue;
+
+    hasil.push({
+      namaMerchant : data[i][idxMerchant] || '-',
+      status       : data[i][idxStatus] || 'Target',
+      mid          : idxMid !== -1 ? (data[i][idxMid] || '-') : '-'
     });
   }
   return hasil;
@@ -717,11 +778,11 @@ function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru, mid) {
 
 /**
  * Jalankan SEKALI dari Apps Script Editor setelah update status pipeline
- * (skema lama → Kunjungan Awal/Done Konversi to LVM/Merchant Menolak/
- * Merchant Tutup), supaya baris-baris lama di sheet "Pipeline EDC to LVM"
- * yang masih pakai istilah status sebelumnya ("Proses", "Sudah LVM",
- * "DONE KONVERSI TO LVM" huruf kapital semua, dst.) ikut termigrasi ke
- * istilah baru.
+ * (skema lama → Target/Done Konversi to LVM/Merchant Menolak/Merchant
+ * Tutup/Perlu Kunjungan MTI), supaya baris-baris lama di sheet "Pipeline
+ * EDC to LVM" yang masih pakai istilah status sebelumnya ("Proses",
+ * "Sudah LVM", "DONE KONVERSI TO LVM" huruf kapital semua, "Kunjungan
+ * Awal", dst.) ikut termigrasi ke istilah baru.
  * Aman dijalankan berkali-kali — baris yang sudah pakai status baru dilewati.
  */
 function migrasiStatusPipeline() {
@@ -733,7 +794,8 @@ function migrasiStatusPipeline() {
   }
 
   var PETA_MIGRASI = {
-    'Proses'               : 'Kunjungan Awal',
+    'Proses'               : 'Target',
+    'Kunjungan Awal'       : 'Target',
     'Sudah LVM'            : 'Done Konversi to LVM',
     'Done Akuisisi'        : 'Done Konversi to LVM',
     'DONE KONVERSI TO LVM' : 'Done Konversi to LVM'

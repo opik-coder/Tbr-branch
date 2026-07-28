@@ -79,10 +79,11 @@
     .stat-box.highlight { background: rgba(47,95,224,.12); border-color: rgba(47,95,224,.4); }
     .stat-number { font-size: 24px; font-weight: 800; line-height: 1; color: #fff; }
     .stat-box.highlight .stat-number { color: #8faaf5; }
-    .stat-box.kunjungan .stat-number { color: #fbbf24; }
+    .stat-box.target .stat-number { color: #fbbf24; }
     .stat-box.done .stat-number { color: #5ee08a; }
     .stat-box.menolak .stat-number { color: #fb923c; }
     .stat-box.tutup .stat-number { color: #f87171; }
+    .stat-box.mti .stat-number { color: #a78bfa; }
     .stat-label { font-size: 10.5px; color: rgba(255,255,255,.55); font-weight: 600; margin-top: 5px; line-height: 1.3; }
 
     .field-label { display: block; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 7px; }
@@ -148,10 +149,11 @@
       font-size: 11px; font-weight: 700; padding: 4px 11px;
       border-radius: 999px; white-space: nowrap; flex-shrink: 0;
     }
-    .badge-kunjungan  { background: rgba(251,191,36,.16); color: #fbbf24; border: 1px solid rgba(251,191,36,.4); }
+    .badge-target     { background: rgba(251,191,36,.16); color: #fbbf24; border: 1px solid rgba(251,191,36,.4); }
     .badge-done       { background: rgba(94,224,138,.16); color: #86efac; border: 1px solid rgba(94,224,138,.4); }
     .badge-menolak    { background: rgba(251,146,60,.16);  color: #fdba74; border: 1px solid rgba(251,146,60,.4); }
     .badge-tutup      { background: rgba(248,113,113,.16); color: #fca5a5; border: 1px solid rgba(248,113,113,.4); }
+    .badge-mti        { background: rgba(167,139,250,.16); color: #c4b5fd; border: 1px solid rgba(167,139,250,.4); }
 
     .empty { text-align: center; padding: 24px; color: rgba(255,255,255,.5); font-size: 13.5px; }
 
@@ -261,9 +263,9 @@
           <div class="stat-number" id="statTotal">0</div>
           <div class="stat-label">Total Merchant</div>
         </div>
-        <div class="stat-box kunjungan">
-          <div class="stat-number" id="statKunjungan">0</div>
-          <div class="stat-label">Kunjungan Awal</div>
+        <div class="stat-box target">
+          <div class="stat-number" id="statTarget">0</div>
+          <div class="stat-label">Target</div>
         </div>
         <div class="stat-box done">
           <div class="stat-number" id="statDone">0</div>
@@ -276,6 +278,10 @@
         <div class="stat-box tutup">
           <div class="stat-number" id="statTutup">0</div>
           <div class="stat-label">Merchant Tutup</div>
+        </div>
+        <div class="stat-box mti">
+          <div class="stat-number" id="statMti">0</div>
+          <div class="stat-label">Perlu Kunjungan MTI</div>
         </div>
       </div>
     </div>
@@ -299,10 +305,11 @@
       <input type="text" id="searchBox" class="search-input" placeholder="Cari nama merchant...">
       <div class="filter-tabs" id="filterTabs">
         <button class="filter-tab active" data-status="">Semua</button>
-        <button class="filter-tab" data-status="Kunjungan Awal">Kunjungan Awal</button>
+        <button class="filter-tab" data-status="Target">Target</button>
         <button class="filter-tab" data-status="Done Konversi to LVM">Done Konversi to LVM</button>
         <button class="filter-tab" data-status="Merchant Menolak">Merchant Menolak</button>
         <button class="filter-tab" data-status="Merchant Tutup">Merchant Tutup</button>
+        <button class="filter-tab" data-status="Perlu Kunjungan MTI">Perlu Kunjungan MTI</button>
       </div>
     </div>
 
@@ -338,10 +345,11 @@
 
     <label class="field-label">Status Progress</label>
     <select id="modalStatus" class="select-input">
-      <option value="Kunjungan Awal">Kunjungan Awal</option>
+      <option value="Target">Target</option>
       <option value="Done Konversi to LVM">Done Konversi to LVM</option>
       <option value="Merchant Menolak">Merchant Menolak</option>
       <option value="Merchant Tutup">Merchant Tutup</option>
+      <option value="Perlu Kunjungan MTI">Perlu Kunjungan MTI</option>
     </select>
 
     <div id="fieldMid" style="display:none;margin-top:16px;">
@@ -501,7 +509,8 @@ function badgeClassFor(status) {
   if (status === 'Done Konversi to LVM') return 'badge-done';
   if (status === 'Merchant Menolak') return 'badge-menolak';
   if (status === 'Merchant Tutup') return 'badge-tutup';
-  return 'badge-kunjungan';
+  if (status === 'Perlu Kunjungan MTI') return 'badge-mti';
+  return 'badge-target';
 }
 
 function render() {
@@ -523,18 +532,20 @@ function render() {
     if (KODE_FILTER && m.kodeCabang !== KODE_FILTER) return false;
     return true;
   });
-  var kunjungan = 0, done = 0, menolak = 0, tutup = 0;
+  var target = 0, done = 0, menolak = 0, tutup = 0, mti = 0;
   cakupan.forEach(function(m) {
     if (m.status === 'Done Konversi to LVM') done++;
     else if (m.status === 'Merchant Menolak') menolak++;
     else if (m.status === 'Merchant Tutup') tutup++;
-    else kunjungan++;
+    else if (m.status === 'Perlu Kunjungan MTI') mti++;
+    else target++;
   });
   document.getElementById('statTotal').textContent = cakupan.length;
-  document.getElementById('statKunjungan').textContent = kunjungan;
+  document.getElementById('statTarget').textContent = target;
   document.getElementById('statDone').textContent = done;
   document.getElementById('statMenolak').textContent = menolak;
   document.getElementById('statTutup').textContent = tutup;
+  document.getElementById('statMti').textContent = mti;
 
   var wrap = document.getElementById('listPipeline');
   if (!filtered.length) {
@@ -567,7 +578,7 @@ function escAttr(s) {
 }
 
 // ── Modal update status ──────────────────────────────────────────
-var STATUS_VALID = ['Kunjungan Awal', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup'];
+var STATUS_VALID = ['Target', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI'];
 
 function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid) {
   MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant };
@@ -575,11 +586,12 @@ function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, 
   document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
   document.getElementById('modalAlamat').textContent = alamat || '';
   document.getElementById('modalMid').value = mid || '';
-  // Data lama mungkin masih pakai status sebelum migrasi (mis. "Proses");
-  // kalau tidak cocok salah satu opsi baru, default ke tahap paling awal.
+  // Data lama mungkin masih pakai status sebelum migrasi (mis. "Proses",
+  // "Kunjungan Awal"); kalau tidak cocok salah satu opsi baru, default ke
+  // tahap paling awal.
   document.getElementById('modalStatus').value = STATUS_VALID.indexOf(statusSaatIni) !== -1
     ? statusSaatIni
-    : 'Kunjungan Awal';
+    : 'Target';
   document.getElementById('modalError').classList.remove('show');
   document.getElementById('modalOverlay').classList.add('show');
   toggleFieldMid();
