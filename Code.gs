@@ -578,7 +578,7 @@ function getOrCreateSheetPipeline(ss) {
     sheet = ss.insertSheet(CONFIG.NAMA_SHEET_PIPELINE);
     var headers = [
       'Kode Cabang', 'Nama Cabang', 'Area', 'Nama Merchant EDC', 'Alamat', 'Kota / Kab',
-      'Status Progress', 'MID', 'Alasan', 'Tanggal Update Terakhir', 'Catatan'
+      'Tagging Merchant', 'Status Progress', 'MID', 'Alasan', 'Tanggal Update Terakhir', 'Catatan'
     ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length)
@@ -660,6 +660,7 @@ function getPipelineAll(kodeCabangFilter) {
   var idxStatus    = headers.indexOf('Status Progress');
   var idxMid       = headers.indexOf('MID');
   var idxAlasan    = headers.indexOf('Alasan');
+  var idxTagging   = headers.indexOf('Tagging Merchant');
   var idxTgl       = headers.indexOf('Tanggal Update Terakhir');
   var idxCatatan   = headers.indexOf('Catatan');
 
@@ -681,6 +682,7 @@ function getPipelineAll(kodeCabangFilter) {
       status        : data[i][idxStatus] || 'Target',
       mid           : idxMid !== -1 ? (data[i][idxMid] || '-') : '-',
       alasan        : idxAlasan !== -1 ? (data[i][idxAlasan] || '-') : '-',
+      tagging       : idxTagging !== -1 ? (data[i][idxTagging] || '-') : '-',
       tanggalUpdate : data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '-',
       catatan       : idxCatatan !== -1 ? (data[i][idxCatatan] || '-') : '-'
     });

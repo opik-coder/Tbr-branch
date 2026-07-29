@@ -157,6 +157,13 @@
     .badge-tutup      { background: rgba(248,113,113,.16); color: #fca5a5; border: 1px solid rgba(248,113,113,.4); }
     .badge-mti        { background: rgba(167,139,250,.16); color: #c4b5fd; border: 1px solid rgba(167,139,250,.4); }
 
+    .badge-tag { font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+    .tag-optimal       { background: rgba(94,224,138,.16);  color: #86efac; border: 1px solid rgba(94,224,138,.4); }
+    .tag-hampir        { background: rgba(45,212,191,.16);  color: #5eead4; border: 1px solid rgba(45,212,191,.4); }
+    .tag-kurang        { background: rgba(251,191,36,.16);  color: #fbbf24; border: 1px solid rgba(251,191,36,.4); }
+    .tag-nihil         { background: rgba(248,113,113,.16); color: #fca5a5; border: 1px solid rgba(248,113,113,.4); }
+    .list-item-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
     .empty { text-align: center; padding: 24px; color: rgba(255,255,255,.5); font-size: 13.5px; }
 
     .table-scroll { overflow-x: auto; margin: -4px -4px -4px 0; padding: 4px 4px 4px 0; }
@@ -446,6 +453,7 @@
     <div class="modal-title" id="modalMerchant">-</div>
     <div class="modal-sub" id="modalCabang">-</div>
     <div class="modal-sub" id="modalAlamat" style="margin-top:-14px;"></div>
+    <div id="modalTaggingWrap" style="display:none;margin-top:8px;"><span class="badge-tag" id="modalTagging"></span></div>
 
     <div id="modalFormGroup">
       <label class="field-label">Status Progress</label>
@@ -717,7 +725,7 @@ function tampilkanData() {
   document.getElementById('listPipeline').addEventListener('click', function(ev) {
     var item = ev.target.closest('.list-item');
     if (!item) return;
-    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan);
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan, item.dataset.tagging);
   });
 
   document.getElementById('modalStatus').addEventListener('change', toggleFieldsByStatus);
@@ -826,6 +834,14 @@ function badgeClassFor(status) {
   return 'badge-target';
 }
 
+function tagClassFor(tag) {
+  if (tag === 'Optimal') return 'tag-optimal';
+  if (tag === 'Hampir Optimal') return 'tag-hampir';
+  if (tag === 'Kurang Optimal') return 'tag-kurang';
+  if (tag === 'Nihil') return 'tag-nihil';
+  return '';
+}
+
 function render() {
   var keyword = (document.getElementById('searchBox') && document.getElementById('searchBox').value || '').toLowerCase().trim();
 
@@ -873,11 +889,16 @@ function render() {
     var infoBaris = '<div class="list-item-info">' + escHtml(areaResmi(m)) + ' · ' + escHtml(namaCabang) + ' (' + escHtml(m.kodeCabang) + ')</div>';
     var alamatGabungan = [m.alamat, m.kota].filter(function(v) { return v && v !== '-'; }).join(', ');
     var alamatBaris = alamatGabungan ? '<div class="list-item-alamat">' + escHtml(alamatGabungan) + '</div>' : '';
+    var tagging = m.tagging && m.tagging !== '-' ? m.tagging : '';
+    var taggingBadge = tagging ? '<span class="badge-tag ' + tagClassFor(tagging) + '">' + escHtml(tagging) + '</span>' : '';
     return '' +
-      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '" data-alasan="' + escAttr(m.alasan && m.alasan !== '-' ? m.alasan : '') + '">' +
+      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '" data-alasan="' + escAttr(m.alasan && m.alasan !== '-' ? m.alasan : '') + '" data-tagging="' + escAttr(tagging) + '">' +
         '<div class="list-item-top">' +
           '<span class="list-item-nama">' + escHtml(m.namaMerchant) + '</span>' +
-          '<span class="badge ' + badgeClassFor(m.status) + '">' + escHtml(m.status) + '</span>' +
+          '<div class="list-item-badges">' +
+            '<span class="badge ' + badgeClassFor(m.status) + '">' + escHtml(m.status) + '</span>' +
+            taggingBadge +
+          '</div>' +
         '</div>' +
         infoBaris +
         alamatBaris +
@@ -896,13 +917,20 @@ function escAttr(s) {
 // ── Modal update status ──────────────────────────────────────────
 var STATUS_VALID = ['Target', 'Penawaran', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI'];
 
-function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area, alasan) {
+function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area, alasan, tagging) {
   MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-' };
   document.getElementById('modalMerchant').textContent = namaMerchant;
   document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
   document.getElementById('modalAlamat').textContent = alamat || '';
   document.getElementById('modalMid').value = mid || '';
   document.getElementById('modalAlasan').value = alasan || '';
+  if (tagging) {
+    document.getElementById('modalTagging').textContent = tagging;
+    document.getElementById('modalTagging').className = 'badge-tag ' + tagClassFor(tagging);
+    document.getElementById('modalTaggingWrap').style.display = 'block';
+  } else {
+    document.getElementById('modalTaggingWrap').style.display = 'none';
+  }
   // Data lama mungkin masih pakai status sebelum migrasi (mis. "Proses",
   // "Kunjungan Awal"); kalau tidak cocok salah satu opsi baru, default ke
   // tahap paling awal.
