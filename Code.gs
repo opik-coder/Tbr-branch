@@ -23,7 +23,7 @@ var CONFIG = {
 };
 
 // Tahapan status progress pipeline akuisisi merchant yang valid.
-var STATUS_EDC_LVM_VALID = ["Target", "Done Konversi to LVM", "Merchant Menolak", "Merchant Tutup", "Perlu Kunjungan MTI"];
+var STATUS_EDC_LVM_VALID = ["Target", "Penawaran", "Done Konversi to LVM", "Merchant Menolak", "Merchant Tutup", "Perlu Kunjungan MTI"];
 
 /**
  * Semua request dari GitHub Pages masuk ke sini via GET.
@@ -91,7 +91,7 @@ function doGet(e) {
       var midUpd          = e.parameter.mid          || '';
 
       if (statusBaruUpd === 'Done Konversi to LVM' && !midUpd.trim()) {
-        return jsonResponse({ success: false, error: 'MID wajib diisi untuk status Done Konversi to LVM.' });
+        return jsonResponse({ success: false, error: 'MNDI/MID/Nomor Rekening wajib diisi untuk status Done Konversi to LVM.' });
       }
 
       var berhasilUpd = updatePipelineStatus(ssUpd, kodeCabangUpd, namaMerchantUpd, statusBaruUpd, midUpd);

@@ -442,7 +442,7 @@ function tampilkanLaporan(d) {
     document.getElementById('jumlahEDCLVM').textContent = updatesEDCLVM.length;
     document.getElementById('listEDCLVM').innerHTML = updatesEDCLVM.map(function(u) {
       var midInfo = (u.status === 'Done Konversi to LVM' && u.mid && u.mid !== '-')
-        ? '<div class="info-label" style="margin-top:2px;">MID: ' + u.mid + '</div>' : '';
+        ? '<div class="info-label" style="margin-top:2px;">MNDI/MID/Nomor Rekening: ' + u.mid + '</div>' : '';
       return '' +
         '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);">' +
           '<div class="info-value">' + u.namaMerchant + '</div>' +
