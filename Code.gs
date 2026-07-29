@@ -23,7 +23,7 @@ var CONFIG = {
 };
 
 // Tahapan status progress pipeline akuisisi merchant yang valid.
-var STATUS_EDC_LVM_VALID = ["Target", "Penawaran", "Done Konversi to LVM", "Merchant Menolak", "Merchant Tutup", "Perlu Kunjungan MTI"];
+var STATUS_EDC_LVM_VALID = ["Target", "Penawaran", "Done Konversi to LVM", "Merchant Menolak", "Merchant Tutup", "Perlu Kunjungan MTI", "Tetap pakai EDC & Optimalkan SV"];
 
 /**
  * Semua request dari GitHub Pages masuk ke sini via GET.

@@ -81,6 +81,7 @@
     .stat-box.menolak .stat-number { color: #fb923c; }
     .stat-box.tutup .stat-number { color: #f87171; }
     .stat-box.mti .stat-number { color: #a78bfa; }
+    .stat-box.tetapedc .stat-number { color: #38bdf8; }
     .stat-label { font-size: 10.5px; color: rgba(255,255,255,.65); font-weight: 600; margin-top: 5px; line-height: 1.3; }
 
     .field-label { display: block; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 7px; }
@@ -156,6 +157,7 @@
     .badge-menolak    { background: rgba(251,146,60,.16);  color: #fdba74; border: 1px solid rgba(251,146,60,.4); }
     .badge-tutup      { background: rgba(248,113,113,.16); color: #fca5a5; border: 1px solid rgba(248,113,113,.4); }
     .badge-mti        { background: rgba(167,139,250,.16); color: #c4b5fd; border: 1px solid rgba(167,139,250,.4); }
+    .badge-tetapedc   { background: rgba(56,189,248,.16);  color: #7dd3fc; border: 1px solid rgba(56,189,248,.4); }
 
     .badge-tag { font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
     .tag-optimal       { background: rgba(94,224,138,.16);  color: #86efac; border: 1px solid rgba(94,224,138,.4); }
@@ -388,6 +390,10 @@
           <div class="stat-number" id="statMti">0</div>
           <div class="stat-label">Perlu Kunjungan MTI</div>
         </div>
+        <div class="stat-box tetapedc">
+          <div class="stat-number" id="statTetapEdc">0</div>
+          <div class="stat-label">Tetap pakai EDC & Optimalkan SV</div>
+        </div>
       </div>
     </div>
 
@@ -422,6 +428,7 @@
         <button class="filter-tab" data-status="Merchant Menolak">Merchant Menolak</button>
         <button class="filter-tab" data-status="Merchant Tutup">Merchant Tutup</button>
         <button class="filter-tab" data-status="Perlu Kunjungan MTI">Perlu Kunjungan MTI</button>
+        <button class="filter-tab" data-status="Tetap pakai EDC & Optimalkan SV">Tetap pakai EDC & Optimalkan SV</button>
       </div>
     </div>
 
@@ -469,6 +476,7 @@
         <option value="Merchant Menolak">Merchant Menolak</option>
         <option value="Merchant Tutup">Merchant Tutup</option>
         <option value="Perlu Kunjungan MTI">Perlu Kunjungan MTI</option>
+        <option value="Tetap pakai EDC & Optimalkan SV">Tetap pakai EDC & Optimalkan SV</option>
       </select>
 
       <div id="fieldMid" style="display:none;margin-top:16px;">
@@ -819,7 +827,7 @@ function renderTabelArea() {
   // Urutan sama dengan dropdown Area (urutan kode area menaik, lihat
   // isiFilterAreaCabang), bukan alfabetis.
   var areas = Object.keys(DATA_CABANG);
-  var totalAgg = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0 };
+  var totalAgg = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0, tetapedc: 0 };
 
   var barisArea = areas.map(function(area) {
     var c = hitungStatusArea(area);
@@ -829,6 +837,7 @@ function renderTabelArea() {
     totalAgg.menolak   += c.menolak;
     totalAgg.tutup     += c.tutup;
     totalAgg.mti       += c.mti;
+    totalAgg.tetapedc  += c.tetapedc;
     return barisAreaProgress(area, c);
   }).join('');
 
@@ -844,7 +853,7 @@ function toggleAreaRow(top) {
 }
 
 function hitungStatusArea(area) {
-  var c = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0 };
+  var c = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0, tetapedc: 0 };
   DATA_ALL.forEach(function(m) {
     if (areaResmi(m) !== area) return;
     c.total++;
@@ -853,12 +862,13 @@ function hitungStatusArea(area) {
     else if (m.status === 'Merchant Menolak') c.menolak++;
     else if (m.status === 'Merchant Tutup') c.tutup++;
     else if (m.status === 'Perlu Kunjungan MTI') c.mti++;
+    else if (m.status === 'Tetap pakai EDC & Optimalkan SV') c.tetapedc++;
   });
   return c;
 }
 
 function barisAreaProgress(label, c, isTotal) {
-  var target = c.total - c.done - c.penawaran - c.menolak - c.tutup - c.mti;
+  var target = c.total - c.done - c.penawaran - c.menolak - c.tutup - c.mti - c.tetapedc;
   var persenFU = c.total ? Math.round(((c.total - target) / c.total) * 1000) / 10 : 0;
   var ariaLabel = label + ', total ' + c.total + ' merchant, progress follow up ' + persenFU + ' persen. Tekan untuk lihat rincian status.';
   return '' +
@@ -875,6 +885,7 @@ function barisAreaProgress(label, c, isTotal) {
         '<span class="badge badge-menolak">Menolak ' + formatAngka(c.menolak) + '</span>' +
         '<span class="badge badge-tutup">Tutup ' + formatAngka(c.tutup) + '</span>' +
         '<span class="badge badge-mti">Perlu Kunjungan MTI ' + formatAngka(c.mti) + '</span>' +
+        '<span class="badge badge-tetapedc">Tetap pakai EDC & Optimalkan SV ' + formatAngka(c.tetapedc) + '</span>' +
       '</div>' +
     '</div>';
 }
@@ -885,6 +896,7 @@ function badgeClassFor(status) {
   if (status === 'Merchant Menolak') return 'badge-menolak';
   if (status === 'Merchant Tutup') return 'badge-tutup';
   if (status === 'Perlu Kunjungan MTI') return 'badge-mti';
+  if (status === 'Tetap pakai EDC & Optimalkan SV') return 'badge-tetapedc';
   return 'badge-target';
 }
 
@@ -915,13 +927,14 @@ function render() {
     if (KODE_FILTER && m.kodeCabang !== KODE_FILTER) return false;
     return true;
   });
-  var target = 0, penawaran = 0, done = 0, menolak = 0, tutup = 0, mti = 0;
+  var target = 0, penawaran = 0, done = 0, menolak = 0, tutup = 0, mti = 0, tetapEdc = 0;
   cakupan.forEach(function(m) {
     if (m.status === 'Penawaran') penawaran++;
     else if (m.status === 'Done Konversi to LVM') done++;
     else if (m.status === 'Merchant Menolak') menolak++;
     else if (m.status === 'Merchant Tutup') tutup++;
     else if (m.status === 'Perlu Kunjungan MTI') mti++;
+    else if (m.status === 'Tetap pakai EDC & Optimalkan SV') tetapEdc++;
     else target++;
   });
   document.getElementById('statTotal').textContent = formatAngka(cakupan.length);
@@ -931,6 +944,7 @@ function render() {
   document.getElementById('statMenolak').textContent = formatAngka(menolak);
   document.getElementById('statTutup').textContent = formatAngka(tutup);
   document.getElementById('statMti').textContent = formatAngka(mti);
+  document.getElementById('statTetapEdc').textContent = formatAngka(tetapEdc);
 
   var wrap = document.getElementById('listPipeline');
   if (!filtered.length) {
@@ -970,7 +984,7 @@ function escAttr(s) {
 }
 
 // ── Modal update status ──────────────────────────────────────────
-var STATUS_VALID = ['Target', 'Penawaran', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI'];
+var STATUS_VALID = ['Target', 'Penawaran', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI', 'Tetap pakai EDC & Optimalkan SV'];
 
 function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area, alasan, tagging) {
   MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-' };
