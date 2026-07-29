@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laporan Akuisisi Harian — RTF Report</title>
+  <title>Laporan Akuisisi Harian — TBRX Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -206,7 +206,7 @@
   <div class="topbar-brand">
     <span class="topbar-badge">R10</span>
     <div>
-      <div class="topbar-title">RTF Report</div>
+      <div class="topbar-title">TBRX Report</div>
       <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
     </div>
   </div>
@@ -360,7 +360,7 @@
 
     <div class="footer">
       ID: <span id="footerID">-</span><br>
-      <span>Copyright &copy; 2026 RTF Team</span>
+      <span>Copyright &copy; 2026 TBRX Team</span>
     </div>
   </div>
 
@@ -443,11 +443,14 @@ function tampilkanLaporan(d) {
     document.getElementById('listEDCLVM').innerHTML = updatesEDCLVM.map(function(u) {
       var midInfo = (u.status === 'Done Konversi to LVM' && u.mid && u.mid !== '-')
         ? '<div class="info-label" style="margin-top:2px;">MNDI/MID/Nomor Rekening: ' + u.mid + '</div>' : '';
+      var alasanInfo = (u.status === 'Merchant Menolak' && u.alasan && u.alasan !== '-')
+        ? '<div class="info-label" style="margin-top:2px;">Alasan: ' + u.alasan + '</div>' : '';
       return '' +
         '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);">' +
           '<div class="info-value">' + u.namaMerchant + '</div>' +
           '<div class="info-label" style="margin-top:2px;">' + u.status + '</div>' +
           midInfo +
+          alasanInfo +
         '</div>';
     }).join('');
     document.getElementById('linkPipelineCabang').href = 'pipeline.html?kode=' + encodeURIComponent(d.kodeCabang);

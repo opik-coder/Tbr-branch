@@ -89,12 +89,16 @@ function doGet(e) {
       var namaMerchantUpd = e.parameter.namaMerchant || '';
       var statusBaruUpd   = e.parameter.status       || '';
       var midUpd          = e.parameter.mid          || '';
+      var alasanUpd       = e.parameter.alasan       || '';
 
       if (statusBaruUpd === 'Done Konversi to LVM' && !midUpd.trim()) {
         return jsonResponse({ success: false, error: 'MNDI/MID/Nomor Rekening wajib diisi untuk status Done Konversi to LVM.' });
       }
+      if (statusBaruUpd === 'Merchant Menolak' && !alasanUpd.trim()) {
+        return jsonResponse({ success: false, error: 'Alasan wajib diisi untuk status Merchant Menolak.' });
+      }
 
-      var berhasilUpd = updatePipelineStatus(ssUpd, kodeCabangUpd, namaMerchantUpd, statusBaruUpd, midUpd);
+      var berhasilUpd = updatePipelineStatus(ssUpd, kodeCabangUpd, namaMerchantUpd, statusBaruUpd, midUpd, alasanUpd);
       if (berhasilUpd) {
         return jsonResponse({ success: true });
       } else {
@@ -315,6 +319,9 @@ function susunTeksWA(tanggal, area, cabang, kode, lvm, edc, edcPot, total, plasL
       var baris = '• ' + u.namaMerchant + ' — ' + u.status;
       if (u.status === 'Done Konversi to LVM' && u.mid && u.mid !== '-') {
         baris += ' (MID: ' + u.mid + ')';
+      }
+      if (u.status === 'Merchant Menolak' && u.alasan && u.alasan !== '-') {
+        baris += ' (Alasan: ' + u.alasan + ')';
       }
       t += baris + '\n';
     });
@@ -571,7 +578,7 @@ function getOrCreateSheetPipeline(ss) {
     sheet = ss.insertSheet(CONFIG.NAMA_SHEET_PIPELINE);
     var headers = [
       'Kode Cabang', 'Nama Cabang', 'Area', 'Nama Merchant EDC', 'Alamat', 'Kota / Kab',
-      'Status Progress', 'MID', 'Tanggal Update Terakhir', 'Catatan'
+      'Status Progress', 'MID', 'Alasan', 'Tanggal Update Terakhir', 'Catatan'
     ];
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     sheet.getRange(1, 1, 1, headers.length)
@@ -652,6 +659,7 @@ function getPipelineAll(kodeCabangFilter) {
   var idxKota      = headers.indexOf('Kota / Kab');
   var idxStatus    = headers.indexOf('Status Progress');
   var idxMid       = headers.indexOf('MID');
+  var idxAlasan    = headers.indexOf('Alasan');
   var idxTgl       = headers.indexOf('Tanggal Update Terakhir');
   var idxCatatan   = headers.indexOf('Catatan');
 
@@ -672,6 +680,7 @@ function getPipelineAll(kodeCabangFilter) {
       kota          : idxKota   !== -1 ? (data[i][idxKota]   || '-') : '-',
       status        : data[i][idxStatus] || 'Target',
       mid           : idxMid !== -1 ? (data[i][idxMid] || '-') : '-',
+      alasan        : idxAlasan !== -1 ? (data[i][idxAlasan] || '-') : '-',
       tanggalUpdate : data[i][idxTgl] ? formatTanggal(data[i][idxTgl]) : '-',
       catatan       : idxCatatan !== -1 ? (data[i][idxCatatan] || '-') : '-'
     });
@@ -701,6 +710,7 @@ function getPipelineUpdatesHariIni(kodeCabang, tanggalLaporan) {
   var idxMerchant = headers.indexOf('Nama Merchant EDC');
   var idxStatus   = headers.indexOf('Status Progress');
   var idxMid      = headers.indexOf('MID');
+  var idxAlasan   = headers.indexOf('Alasan');
   var idxTgl      = headers.indexOf('Tanggal Update Terakhir');
   if (idxKode === -1 || idxMerchant === -1 || idxTgl === -1) return [];
 
@@ -718,7 +728,8 @@ function getPipelineUpdatesHariIni(kodeCabang, tanggalLaporan) {
     hasil.push({
       namaMerchant : data[i][idxMerchant] || '-',
       status       : data[i][idxStatus] || 'Target',
-      mid          : idxMid !== -1 ? (data[i][idxMid] || '-') : '-'
+      mid          : idxMid !== -1 ? (data[i][idxMid] || '-') : '-',
+      alasan       : idxAlasan !== -1 ? (data[i][idxAlasan] || '-') : '-'
     });
   }
   return hasil;
@@ -729,12 +740,13 @@ function getPipelineUpdatesHariIni(kodeCabang, tanggalLaporan) {
  * Dipanggil dari prosesSubmit() saat user memilih merchant + status baru
  * di form, dan dari action=updateStatus (pipeline.html). Mencari baris
  * berdasarkan kombinasi Kode Cabang + Nama Merchant, lalu menimpa kolom
- * Status Progress, MID (kalau diisi), & Tanggal Update Terakhir baris itu
- * (bukan menambah baris baru — 1 merchant = 1 baris terus terupdate).
- * Parameter "mid" opsional — hanya ditulis kalau ada isinya.
+ * Status Progress, MID (kalau diisi), Alasan (kalau diisi), & Tanggal
+ * Update Terakhir baris itu (bukan menambah baris baru — 1 merchant =
+ * 1 baris terus terupdate).
+ * Parameter "mid" & "alasan" opsional — hanya ditulis kalau ada isinya.
  * Return true kalau baris ditemukan & berhasil diupdate, false kalau tidak.
  */
-function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru, mid) {
+function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru, mid, alasan) {
   var sheet = ss.getSheetByName(CONFIG.NAMA_SHEET_PIPELINE);
   if (!sheet) return false;
 
@@ -751,6 +763,7 @@ function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru, mid) {
   var idxMerchant = headers.indexOf('Nama Merchant EDC');
   var idxStatus   = headers.indexOf('Status Progress');
   var idxMid      = headers.indexOf('MID');
+  var idxAlasan   = headers.indexOf('Alasan');
   var idxTgl      = headers.indexOf('Tanggal Update Terakhir');
   if (idxKode === -1 || idxMerchant === -1 || idxStatus === -1) return false;
 
@@ -764,6 +777,9 @@ function updatePipelineStatus(ss, kodeCabang, namaMerchant, statusBaru, mid) {
       sheet.getRange(i + 1, idxStatus + 1).setValue(statusBaru);
       if (idxMid !== -1 && mid && String(mid).trim()) {
         sheet.getRange(i + 1, idxMid + 1).setValue(String(mid).trim());
+      }
+      if (idxAlasan !== -1 && alasan && String(alasan).trim()) {
+        sheet.getRange(i + 1, idxAlasan + 1).setValue(String(alasan).trim());
       }
       if (idxTgl !== -1) {
         sheet.getRange(i + 1, idxTgl + 1).setValue(

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pipeline Akuisisi Merchant — RTF Report</title>
+  <title>Pipeline Konversi EDC ke LVM — TBRX Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -159,6 +159,16 @@
 
     .empty { text-align: center; padding: 24px; color: rgba(255,255,255,.5); font-size: 13.5px; }
 
+    .table-scroll { overflow-x: auto; margin: -4px -4px -4px 0; padding: 4px 4px 4px 0; }
+    .area-table { width: 100%; border-collapse: collapse; font-size: 12.5px; white-space: nowrap; }
+    .area-table th, .area-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .area-table th { font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .3px; }
+    .area-table th.num, .area-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .area-table td.num { font-weight: 700; color: #fff; }
+    .area-table tbody tr:last-child td { border-bottom: none; }
+    .area-table tbody tr:not(.total-row):hover { background: rgba(255,255,255,.03); }
+    .area-table tr.total-row td { font-weight: 800; color: #fff; border-top: 2px solid rgba(255,255,255,.18); background: rgba(47,95,224,.08); }
+
     #loadingState { text-align: center; padding: 60px 20px; color: rgba(255,255,255,.7); position: relative; z-index: 1; }
     .spinner {
       width: 44px; height: 44px;
@@ -296,7 +306,7 @@
   <div class="topbar-brand">
     <span class="topbar-badge">R10</span>
     <div>
-      <div class="topbar-title">RTF Report</div>
+      <div class="topbar-title">TBRX Report</div>
       <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
     </div>
   </div>
@@ -307,7 +317,7 @@
 
   <div class="page-head">
     <a class="breadcrumb" href="index.html">← Lanjutkan Laporan</a>
-    <h1 class="page-title">Pipeline Akuisisi Merchant</h1>
+    <h1 class="page-title">Pipeline Konversi EDC ke LVM</h1>
     <div class="page-subtitle" id="headerSubtitle">Memuat data...</div>
   </div>
 
@@ -351,6 +361,27 @@
           <div class="stat-number" id="statMti">0</div>
           <div class="stat-label">Perlu Kunjungan MTI</div>
         </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Progress per Area</div>
+      <div class="table-scroll">
+        <table class="area-table">
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th class="num">Total Pipeline</th>
+              <th class="num">Done Konversi to LVM</th>
+              <th class="num">Penawaran</th>
+              <th class="num">Merchant Menolak</th>
+              <th class="num">Merchant Tutup</th>
+              <th class="num">Perlu Kunjungan MTI</th>
+              <th class="num">% Progress FU</th>
+            </tr>
+          </thead>
+          <tbody id="tabelAreaBody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -400,8 +431,8 @@
   </div>
 
   <div class="footer">
-    Pipeline Akuisisi Merchant<br>
-    <span>Copyright &copy; 2026 RTF Team</span>
+    Pipeline Konversi EDC ke LVM<br>
+    <span>Copyright &copy; 2026 TBRX Team</span>
   </div>
 </div>
 
@@ -430,6 +461,10 @@
       <div id="fieldMid" style="display:none;margin-top:16px;">
         <label class="field-label">MNDI/MID/Nomor Rekening <span style="color:#ff8fa3;">*</span></label>
         <input type="text" id="modalMid" class="search-input" placeholder="Masukkan MNDI/MID/Nomor Rekening" style="margin-bottom:0;">
+      </div>
+      <div id="fieldAlasan" style="display:none;margin-top:16px;">
+        <label class="field-label">Alasan Menolak <span style="color:#ff8fa3;">*</span></label>
+        <textarea id="modalAlasan" class="search-input" placeholder="Masukkan alasan merchant menolak" style="margin-bottom:0;min-height:70px;resize:vertical;"></textarea>
       </div>
       <div class="modal-error" id="modalError">Gagal menyimpan. Coba lagi.</div>
 
@@ -655,6 +690,7 @@ function tampilkanData() {
   }
 
   isiFilterAreaCabang();
+  renderTabelArea();
   render();
 
   document.getElementById('searchBox').addEventListener('input', render);
@@ -681,10 +717,10 @@ function tampilkanData() {
   document.getElementById('listPipeline').addEventListener('click', function(ev) {
     var item = ev.target.closest('.list-item');
     if (!item) return;
-    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area);
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan);
   });
 
-  document.getElementById('modalStatus').addEventListener('change', toggleFieldMid);
+  document.getElementById('modalStatus').addEventListener('change', toggleFieldsByStatus);
   document.getElementById('modalCancel').addEventListener('click', tutupModal);
   document.getElementById('modalOverlay').addEventListener('click', function(ev) {
     if (ev.target === this) tutupModal();
@@ -728,6 +764,57 @@ function isiSelectCabang() {
     kodeList.map(function(k) { return '<option value="' + k + '">' + k + ' - ' + map[k] + '</option>'; }).join('');
 
   if (KODE_FILTER) cabangSel.value = KODE_FILTER;
+}
+
+// ── Tabel Progress per Area (selalu semua area, tidak terpengaruh filter) ──
+function renderTabelArea() {
+  var areas = Object.keys(DATA_CABANG).sort();
+  var totalAgg = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0 };
+
+  var barisArea = areas.map(function(area) {
+    var c = hitungStatusArea(area);
+    totalAgg.total     += c.total;
+    totalAgg.done      += c.done;
+    totalAgg.penawaran += c.penawaran;
+    totalAgg.menolak   += c.menolak;
+    totalAgg.tutup     += c.tutup;
+    totalAgg.mti       += c.mti;
+    return barisTabelArea(area, c);
+  }).join('');
+
+  var totalRow = barisTabelArea('Total', totalAgg, true);
+
+  document.getElementById('tabelAreaBody').innerHTML = barisArea + totalRow;
+}
+
+function hitungStatusArea(area) {
+  var c = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0 };
+  DATA_ALL.forEach(function(m) {
+    if (areaResmi(m) !== area) return;
+    c.total++;
+    if (m.status === 'Done Konversi to LVM') c.done++;
+    else if (m.status === 'Penawaran') c.penawaran++;
+    else if (m.status === 'Merchant Menolak') c.menolak++;
+    else if (m.status === 'Merchant Tutup') c.tutup++;
+    else if (m.status === 'Perlu Kunjungan MTI') c.mti++;
+  });
+  return c;
+}
+
+function barisTabelArea(label, c, isTotal) {
+  var target = c.total - c.done - c.penawaran - c.menolak - c.tutup - c.mti;
+  var persenFU = c.total ? Math.round(((c.total - target) / c.total) * 1000) / 10 : 0;
+  return '' +
+    '<tr' + (isTotal ? ' class="total-row"' : '') + '>' +
+      '<td>' + escHtml(label) + '</td>' +
+      '<td class="num">' + c.total + '</td>' +
+      '<td class="num">' + c.done + '</td>' +
+      '<td class="num">' + c.penawaran + '</td>' +
+      '<td class="num">' + c.menolak + '</td>' +
+      '<td class="num">' + c.tutup + '</td>' +
+      '<td class="num">' + c.mti + '</td>' +
+      '<td class="num">' + persenFU + '%</td>' +
+    '</tr>';
 }
 
 function badgeClassFor(status) {
@@ -787,7 +874,7 @@ function render() {
     var alamatGabungan = [m.alamat, m.kota].filter(function(v) { return v && v !== '-'; }).join(', ');
     var alamatBaris = alamatGabungan ? '<div class="list-item-alamat">' + escHtml(alamatGabungan) + '</div>' : '';
     return '' +
-      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '">' +
+      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '" data-alasan="' + escAttr(m.alasan && m.alasan !== '-' ? m.alasan : '') + '">' +
         '<div class="list-item-top">' +
           '<span class="list-item-nama">' + escHtml(m.namaMerchant) + '</span>' +
           '<span class="badge ' + badgeClassFor(m.status) + '">' + escHtml(m.status) + '</span>' +
@@ -809,12 +896,13 @@ function escAttr(s) {
 // ── Modal update status ──────────────────────────────────────────
 var STATUS_VALID = ['Target', 'Penawaran', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI'];
 
-function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area) {
+function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area, alasan) {
   MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-' };
   document.getElementById('modalMerchant').textContent = namaMerchant;
   document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
   document.getElementById('modalAlamat').textContent = alamat || '';
   document.getElementById('modalMid').value = mid || '';
+  document.getElementById('modalAlasan').value = alasan || '';
   // Data lama mungkin masih pakai status sebelum migrasi (mis. "Proses",
   // "Kunjungan Awal"); kalau tidak cocok salah satu opsi baru, default ke
   // tahap paling awal.
@@ -825,12 +913,13 @@ function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, 
   document.getElementById('modalFormGroup').style.display = 'block';
   document.getElementById('modalWaGroup').style.display = 'none';
   document.getElementById('modalOverlay').classList.add('show');
-  toggleFieldMid();
+  toggleFieldsByStatus();
 }
 
-function toggleFieldMid() {
-  var perluMid = document.getElementById('modalStatus').value === 'Done Konversi to LVM';
-  document.getElementById('fieldMid').style.display = perluMid ? 'block' : 'none';
+function toggleFieldsByStatus() {
+  var status = document.getElementById('modalStatus').value;
+  document.getElementById('fieldMid').style.display = (status === 'Done Konversi to LVM') ? 'block' : 'none';
+  document.getElementById('fieldAlasan').style.display = (status === 'Merchant Menolak') ? 'block' : 'none';
 }
 
 function tutupModal() {
@@ -842,6 +931,7 @@ function simpanStatus() {
   if (!MODAL_TARGET) return;
   var statusBaru = document.getElementById('modalStatus').value;
   var midValue = document.getElementById('modalMid').value.trim();
+  var alasanValue = document.getElementById('modalAlasan').value.trim();
   var btn = document.getElementById('modalSave');
   var errBox = document.getElementById('modalError');
   errBox.classList.remove('show');
@@ -850,6 +940,12 @@ function simpanStatus() {
     errBox.textContent = 'MNDI/MID/Nomor Rekening wajib diisi untuk status Done Konversi to LVM.';
     errBox.classList.add('show');
     document.getElementById('modalMid').focus();
+    return;
+  }
+  if (statusBaru === 'Merchant Menolak' && !alasanValue) {
+    errBox.textContent = 'Alasan wajib diisi untuk status Merchant Menolak.';
+    errBox.classList.add('show');
+    document.getElementById('modalAlasan').focus();
     return;
   }
 
@@ -861,7 +957,8 @@ function simpanStatus() {
     kodeCabang   : MODAL_TARGET.kodeCabang,
     namaMerchant : MODAL_TARGET.namaMerchant,
     status       : statusBaru,
-    mid          : midValue
+    mid          : midValue,
+    alasan       : alasanValue
   });
 
   fetch(APPS_SCRIPT_URL + '?' + params.toString())
@@ -879,12 +976,14 @@ function simpanStatus() {
         if (m.kodeCabang === MODAL_TARGET.kodeCabang && m.namaMerchant === MODAL_TARGET.namaMerchant) {
           m.status = statusBaru;
           if (midValue) m.mid = midValue;
+          if (alasanValue) m.alasan = alasanValue;
           m.tanggalUpdate = 'Baru saja';
         }
       });
+      renderTabelArea();
       render();
       toast('Status berhasil diperbarui!');
-      tampilkanWaPipeline(statusBaru, midValue);
+      tampilkanWaPipeline(statusBaru, midValue, alasanValue);
     })
     .catch(function(err) {
       btn.disabled = false;
@@ -897,12 +996,12 @@ function simpanStatus() {
 // ── Tugas 1: wording laporan WA otomatis begitu update tersimpan ──
 var MODAL_WA_TEXT = '';
 
-function buatWaTeksPipeline(target, status, mid) {
+function buatWaTeksPipeline(target, status, mid, alasan) {
   var tgl = new Date();
   var tglStr = String(tgl.getDate()).padStart(2, '0') + '/' +
                String(tgl.getMonth() + 1).padStart(2, '0') + '/' + tgl.getFullYear();
   var t = '';
-  t += 'Mohon izin update progress Pipeline Akuisisi Merchant:\n\n';
+  t += 'Mohon izin update progress Pipeline Konversi EDC ke LVM:\n\n';
   t += 'Tanggal : ' + tglStr + '\n';
   t += 'Area    : ' + (target.area || '-') + '\n';
   t += 'Cabang  : ' + target.namaCabang + ' (' + target.kodeCabang + ')\n\n';
@@ -911,12 +1010,15 @@ function buatWaTeksPipeline(target, status, mid) {
   if (status === 'Done Konversi to LVM' && mid) {
     t += '• MNDI/MID/Rek : ' + mid + '\n';
   }
+  if (status === 'Merchant Menolak' && alasan) {
+    t += '• Alasan   : ' + alasan + '\n';
+  }
   t += '\nTerima kasih.';
   return t;
 }
 
-function tampilkanWaPipeline(status, mid) {
-  MODAL_WA_TEXT = buatWaTeksPipeline(MODAL_TARGET, status, mid);
+function tampilkanWaPipeline(status, mid, alasan) {
+  MODAL_WA_TEXT = buatWaTeksPipeline(MODAL_TARGET, status, mid, alasan);
   document.getElementById('modalWaText').textContent = MODAL_WA_TEXT;
   document.getElementById('modalWaSend').href = 'https://wa.me/?text=' + encodeURIComponent(MODAL_WA_TEXT);
   document.getElementById('modalFormGroup').style.display = 'none';
