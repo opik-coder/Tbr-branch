@@ -467,8 +467,8 @@
       </select>
 
       <div id="fieldMid" style="display:none;margin-top:16px;">
-        <label class="field-label">MNDI/MID/Nomor Rekening <span style="color:#ff8fa3;">*</span></label>
-        <input type="text" id="modalMid" class="search-input" placeholder="Masukkan MNDI/MID/Nomor Rekening" style="margin-bottom:0;">
+        <label class="field-label">NMID/MID/Nomor Rekening <span style="color:#ff8fa3;">*</span></label>
+        <input type="text" id="modalMid" class="search-input" placeholder="Masukkan NMID/MID/Nomor Rekening" style="margin-bottom:0;">
       </div>
       <div id="fieldAlasan" style="display:none;margin-top:16px;">
         <label class="field-label">Alasan Menolak <span style="color:#ff8fa3;">*</span></label>
@@ -965,7 +965,7 @@ function simpanStatus() {
   errBox.classList.remove('show');
 
   if (statusBaru === 'Done Konversi to LVM' && !midValue) {
-    errBox.textContent = 'MNDI/MID/Nomor Rekening wajib diisi untuk status Done Konversi to LVM.';
+    errBox.textContent = 'NMID/MID/Nomor Rekening wajib diisi untuk status Done Konversi to LVM.';
     errBox.classList.add('show');
     document.getElementById('modalMid').focus();
     return;
@@ -1036,7 +1036,7 @@ function buatWaTeksPipeline(target, status, mid, alasan) {
   t += '• Merchant : ' + target.namaMerchant + '\n';
   t += '• Status   : ' + status + '\n';
   if (status === 'Done Konversi to LVM' && mid) {
-    t += '• MNDI/MID/Rek : ' + mid + '\n';
+    t += '• NMID/MID/Rek : ' + mid + '\n';
   }
   if (status === 'Merchant Menolak' && alasan) {
     t += '• Alasan   : ' + alasan + '\n';
