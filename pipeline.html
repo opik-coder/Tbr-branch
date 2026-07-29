@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Pipeline Konversi EDC ke LVM — TBRX Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,7 @@
       letter-spacing: .3px; padding: 4px 7px; border-radius: 5px; line-height: 1;
     }
     .topbar-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 18px; color: #fff; line-height: 1.1; }
-    .topbar-sub { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 2px; }
+    .topbar-sub { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.65); margin-top: 2px; }
     .topbar-nav {
       font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,.75);
       text-decoration: none; padding: 8px 16px; border: 1px solid rgba(255,255,255,.16);
@@ -39,10 +39,10 @@
     .container { max-width: 600px; margin: 0 auto; padding: 8px 16px 44px; position: relative; z-index: 1; }
 
     .page-head { text-align: center; margin: 28px 0 24px; }
-    .breadcrumb { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: rgba(255,255,255,.4); margin-bottom: 10px; text-decoration: none; display: inline-block; }
-    .breadcrumb:hover { color: rgba(255,255,255,.7); }
+    .breadcrumb { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: rgba(255,255,255,.6); margin-bottom: 10px; text-decoration: none; display: inline-block; }
+    .breadcrumb:hover { color: rgba(255,255,255,.85); }
     .page-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: 28px; letter-spacing: -.3px; color: #fff; margin-bottom: 8px; }
-    .page-subtitle { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.55); }
+    .page-subtitle { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.65); }
 
     .card {
       position: relative;
@@ -85,7 +85,7 @@
     .stat-box.menolak .stat-number { color: #fb923c; }
     .stat-box.tutup .stat-number { color: #f87171; }
     .stat-box.mti .stat-number { color: #a78bfa; }
-    .stat-label { font-size: 10.5px; color: rgba(255,255,255,.55); font-weight: 600; margin-top: 5px; line-height: 1.3; }
+    .stat-label { font-size: 10.5px; color: rgba(255,255,255,.65); font-weight: 600; margin-top: 5px; line-height: 1.3; }
 
     .field-label { display: block; font-size: 12px; font-weight: 700; color: rgba(255,255,255,.7); margin-bottom: 7px; }
     .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
@@ -116,7 +116,10 @@
 
     .filter-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
     .filter-tab {
-      padding: 8px 14px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      padding: 0 16px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.04);
@@ -143,9 +146,9 @@
     .list-item:last-child { margin-bottom: 0; }
     .list-item-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .list-item-nama { font-size: 14.5px; font-weight: 700; color: #fff; }
-    .list-item-info { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 4px; }
-    .list-item-alamat { font-size: 11.5px; color: rgba(255,255,255,.4); margin-top: 3px; }
-    .list-item-tgl { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 6px; }
+    .list-item-info { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 4px; }
+    .list-item-alamat { font-size: 11.5px; color: rgba(255,255,255,.55); margin-top: 3px; }
+    .list-item-tgl { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 6px; }
 
     .badge {
       font-size: 11px; font-weight: 700; padding: 4px 11px;
@@ -167,15 +170,34 @@
 
     .empty { text-align: center; padding: 24px; color: rgba(255,255,255,.5); font-size: 13.5px; }
 
-    .table-scroll { overflow-x: auto; margin: -4px -4px -4px 0; padding: 4px 4px 4px 0; }
-    .area-table { width: 100%; border-collapse: collapse; font-size: 12.5px; white-space: nowrap; }
-    .area-table th, .area-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .area-table th { font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .3px; }
-    .area-table th.num, .area-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-    .area-table td.num { font-weight: 700; color: #fff; }
-    .area-table tbody tr:last-child td { border-bottom: none; }
-    .area-table tbody tr:not(.total-row):hover { background: rgba(255,255,255,.03); }
-    .area-table tr.total-row td { font-weight: 800; color: #fff; border-top: 2px solid rgba(255,255,255,.18); background: rgba(47,95,224,.08); }
+    .area-row {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      margin-bottom: 8px;
+      background: rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+    .area-row:last-child { margin-bottom: 0; }
+    .area-row.is-total { background: rgba(47,95,224,.08); border-color: rgba(47,95,224,.35); }
+    .area-row-top {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 16px;
+      cursor: pointer;
+    }
+    .area-row-top:hover { background: rgba(255,255,255,.04); }
+    .area-row-top:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgba(68,114,239,.7); }
+    .area-row-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .area-row.is-total .area-row-name { font-weight: 800; }
+    .area-row-total { font-size: 13.5px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .area-row-percent { font-size: 12.5px; font-weight: 700; color: #8faaf5; min-width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
+    .area-row-chevron { flex-shrink: 0; color: rgba(255,255,255,.5); transition: transform .2s; }
+    .area-row.open .area-row-chevron { transform: rotate(180deg); }
+    .area-row-detail {
+      display: none;
+      flex-wrap: wrap; gap: 6px;
+      padding: 0 16px 14px;
+    }
+    .area-row.open .area-row-detail { display: flex; }
 
     #loadingState { text-align: center; padding: 60px 20px; color: rgba(255,255,255,.7); position: relative; z-index: 1; }
     .spinner {
@@ -187,7 +209,7 @@
       margin: 0 auto 16px;
     }
 
-    .footer { text-align: center; padding: 40px 16px 4px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.4); }
+    .footer { text-align: center; padding: 40px 16px 4px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.55); }
 
     .back-link {
       display: inline-block; margin-top: 4px;
@@ -215,7 +237,7 @@
       box-shadow: 0 30px 70px -20px rgba(0,0,0,.7);
     }
     .modal-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 19px; color: #fff; margin-bottom: 4px; }
-    .modal-sub { font-size: 12.5px; color: rgba(255,255,255,.5); margin-bottom: 20px; }
+    .modal-sub { font-size: 12.5px; color: rgba(255,255,255,.65); margin-bottom: 20px; }
     .modal-error { font-size: 12.5px; color: #fca5a5; margin-top: 10px; display: none; }
     .modal-error.show { display: block; }
     .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 22px; }
@@ -255,7 +277,7 @@
        kelihatan walau daftar merchant-nya ribuan baris & panjang banget. */
     .fab-lanjutkan {
       position: fixed;
-      left: 50%; bottom: 18px;
+      left: 50%; bottom: calc(18px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
       z-index: 400;
       display: flex; align-items: center; gap: 8px;
@@ -291,11 +313,11 @@
     }
 
     /* Kasih jarak di paling bawah biar konten terakhir nggak ketutup FAB */
-    .container { padding-bottom: 90px; }
+    .container { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
 
     #toast {
       position: fixed;
-      bottom: 88px; left: 50%;
+      bottom: calc(88px + env(safe-area-inset-bottom)); left: 50%;
       transform: translateX(-50%) translateY(80px);
       background: rgba(10,14,30,.92);
       border: 1px solid rgba(255,255,255,.14);
@@ -375,23 +397,8 @@
 
     <div class="card">
       <div class="card-title">Progress per Area</div>
-      <div class="table-scroll">
-        <table class="area-table">
-          <thead>
-            <tr>
-              <th>Area</th>
-              <th class="num">Total Pipeline</th>
-              <th class="num">Done Konversi to LVM</th>
-              <th class="num">Penawaran</th>
-              <th class="num">Merchant Menolak</th>
-              <th class="num">Merchant Tutup</th>
-              <th class="num">Perlu Kunjungan MTI</th>
-              <th class="num">% Progress FU</th>
-            </tr>
-          </thead>
-          <tbody id="tabelAreaBody"></tbody>
-        </table>
-      </div>
+      <p style="font-size:12px;color:rgba(255,255,255,.6);margin:-10px 0 14px;">Tekan salah satu area untuk lihat rincian status.</p>
+      <div id="areaProgressList"></div>
     </div>
 
     <div class="card">
@@ -424,7 +431,7 @@
 
     <div class="card">
       <div class="card-title">Daftar Merchant</div>
-      <p style="font-size:12px;color:rgba(255,255,255,.45);margin:-10px 0 14px;">Klik salah satu merchant untuk update progress.</p>
+      <p style="font-size:12px;color:rgba(255,255,255,.6);margin:-10px 0 14px;">Klik salah satu merchant untuk update progress.</p>
       <div id="listPipeline"></div>
     </div>
 
@@ -432,7 +439,7 @@
 
   <div id="errorState" style="display:none;">
     <div class="page-head" style="margin-top:60px;">
-      <div style="font-size:44px;margin-bottom:16px;">⚠</div>
+      <div style="margin-bottom:16px;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
       <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:24px;margin-bottom:8px;color:#fff;">Gagal Memuat Data</h2>
       <p style="color:rgba(255,255,255,.55);font-size:13.5px;margin-bottom:20px;" id="errorMsg">Terjadi kesalahan saat mengambil data pipeline.</p>
       <a href="index.html" class="back-link">← Lanjutkan Laporan</a>
@@ -647,6 +654,11 @@ function namaCabangResmi(m) {
   return KODE_TO_NAMA[m.kodeCabang] || m.namaCabang || '-';
 }
 
+// Format angka pakai pemisah ribuan gaya Indonesia (mis. 12345 -> "12.345").
+function formatAngka(n) {
+  return Number(n || 0).toLocaleString('id-ID');
+}
+
 window.onload = function() {
   var params = new URLSearchParams(window.location.search);
   KODE_FILTER = params.get('kode') || '';
@@ -724,6 +736,18 @@ function tampilkanData() {
     render();
   });
 
+  document.getElementById('areaProgressList').addEventListener('click', function(ev) {
+    var top = ev.target.closest('.area-row-top');
+    if (top) toggleAreaRow(top);
+  });
+  document.getElementById('areaProgressList').addEventListener('keydown', function(ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var top = ev.target.closest('.area-row-top');
+    if (!top) return;
+    ev.preventDefault();
+    toggleAreaRow(top);
+  });
+
   document.getElementById('listPipeline').addEventListener('click', function(ev) {
     var item = ev.target.closest('.list-item');
     if (!item) return;
@@ -757,7 +781,10 @@ function isiFilterAreaCabang() {
   var areaSel = document.getElementById('selectArea');
   // Selalu pakai 7 area resmi dari DATA_CABANG (bukan kolom "Area" di sheet
   // Pipeline, yang kadang keisi manual dengan nama cabang / data kotor).
-  var areas = Object.keys(DATA_CABANG).sort();
+  // Urutan mengikuti urutan definisi DATA_CABANG (= urutan kode area
+  // menaik: Manado, Palu, Makassar Kartini, Kendari, Pare Pare,
+  // Makassar Ratulangi, Maluku) — bukan alfabetis.
+  var areas = Object.keys(DATA_CABANG);
   areaSel.innerHTML = '<option value="">Semua Area</option>' +
     areas.map(function(a) { return '<option value="' + a + '">' + a + '</option>'; }).join('');
 
@@ -788,9 +815,14 @@ function isiSelectCabang() {
   if (KODE_FILTER) cabangSel.value = KODE_FILTER;
 }
 
-// ── Tabel Progress per Area (selalu semua area, tidak terpengaruh filter) ──
+// ── Progress per Area (selalu semua area, tidak terpengaruh filter) ──
+// Setiap area ditampilkan sebagai baris ringkas (Area, Total, %Progress FU)
+// yang bisa ditekan untuk expand lihat rincian status — supaya nggak perlu
+// scroll ke samping seperti tabel biasa di layar mobile.
 function renderTabelArea() {
-  var areas = Object.keys(DATA_CABANG).sort();
+  // Urutan sama dengan dropdown Area (urutan kode area menaik, lihat
+  // isiFilterAreaCabang), bukan alfabetis.
+  var areas = Object.keys(DATA_CABANG);
   var totalAgg = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0 };
 
   var barisArea = areas.map(function(area) {
@@ -801,12 +833,18 @@ function renderTabelArea() {
     totalAgg.menolak   += c.menolak;
     totalAgg.tutup     += c.tutup;
     totalAgg.mti       += c.mti;
-    return barisTabelArea(area, c);
+    return barisAreaProgress(area, c);
   }).join('');
 
-  var totalRow = barisTabelArea('Total', totalAgg, true);
+  var totalRow = barisAreaProgress('Total', totalAgg, true);
 
-  document.getElementById('tabelAreaBody').innerHTML = barisArea + totalRow;
+  document.getElementById('areaProgressList').innerHTML = barisArea + totalRow;
+}
+
+function toggleAreaRow(top) {
+  var row = top.closest('.area-row');
+  var isOpen = row.classList.toggle('open');
+  top.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
 
 function hitungStatusArea(area) {
@@ -823,20 +861,26 @@ function hitungStatusArea(area) {
   return c;
 }
 
-function barisTabelArea(label, c, isTotal) {
+function barisAreaProgress(label, c, isTotal) {
   var target = c.total - c.done - c.penawaran - c.menolak - c.tutup - c.mti;
   var persenFU = c.total ? Math.round(((c.total - target) / c.total) * 1000) / 10 : 0;
+  var ariaLabel = label + ', total ' + c.total + ' merchant, progress follow up ' + persenFU + ' persen. Tekan untuk lihat rincian status.';
   return '' +
-    '<tr' + (isTotal ? ' class="total-row"' : '') + '>' +
-      '<td>' + escHtml(label) + '</td>' +
-      '<td class="num">' + c.total + '</td>' +
-      '<td class="num">' + c.done + '</td>' +
-      '<td class="num">' + c.penawaran + '</td>' +
-      '<td class="num">' + c.menolak + '</td>' +
-      '<td class="num">' + c.tutup + '</td>' +
-      '<td class="num">' + c.mti + '</td>' +
-      '<td class="num">' + persenFU + '%</td>' +
-    '</tr>';
+    '<div class="area-row' + (isTotal ? ' is-total' : '') + '">' +
+      '<div class="area-row-top" tabindex="0" role="button" aria-expanded="false" aria-label="' + escAttr(ariaLabel) + '">' +
+        '<span class="area-row-name">' + escHtml(label) + '</span>' +
+        '<span class="area-row-total">' + formatAngka(c.total) + '</span>' +
+        '<span class="area-row-percent">' + persenFU + '%</span>' +
+        '<svg class="area-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+      '</div>' +
+      '<div class="area-row-detail">' +
+        '<span class="badge badge-done">Done ' + formatAngka(c.done) + '</span>' +
+        '<span class="badge badge-penawaran">Penawaran ' + formatAngka(c.penawaran) + '</span>' +
+        '<span class="badge badge-menolak">Menolak ' + formatAngka(c.menolak) + '</span>' +
+        '<span class="badge badge-tutup">Tutup ' + formatAngka(c.tutup) + '</span>' +
+        '<span class="badge badge-mti">Perlu Kunjungan MTI ' + formatAngka(c.mti) + '</span>' +
+      '</div>' +
+    '</div>';
 }
 
 function badgeClassFor(status) {
@@ -884,13 +928,13 @@ function render() {
     else if (m.status === 'Perlu Kunjungan MTI') mti++;
     else target++;
   });
-  document.getElementById('statTotal').textContent = cakupan.length;
-  document.getElementById('statTarget').textContent = target;
-  document.getElementById('statPenawaran').textContent = penawaran;
-  document.getElementById('statDone').textContent = done;
-  document.getElementById('statMenolak').textContent = menolak;
-  document.getElementById('statTutup').textContent = tutup;
-  document.getElementById('statMti').textContent = mti;
+  document.getElementById('statTotal').textContent = formatAngka(cakupan.length);
+  document.getElementById('statTarget').textContent = formatAngka(target);
+  document.getElementById('statPenawaran').textContent = formatAngka(penawaran);
+  document.getElementById('statDone').textContent = formatAngka(done);
+  document.getElementById('statMenolak').textContent = formatAngka(menolak);
+  document.getElementById('statTutup').textContent = formatAngka(tutup);
+  document.getElementById('statMti').textContent = formatAngka(mti);
 
   var wrap = document.getElementById('listPipeline');
   if (!filtered.length) {

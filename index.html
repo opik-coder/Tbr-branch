@@ -27,7 +27,7 @@
       letter-spacing: .3px; padding: 4px 7px; border-radius: 5px; line-height: 1;
     }
     .topbar-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 18px; color: #fff; line-height: 1.1; }
-    .topbar-sub { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 2px; }
+    .topbar-sub { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.65); margin-top: 2px; }
     .topbar-nav {
       font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,.75);
       text-decoration: none; padding: 8px 16px; border: 1px solid rgba(255,255,255,.16);
@@ -39,9 +39,9 @@
     .container { max-width: 560px; margin: 0 auto; padding: 8px 16px 44px; position: relative; z-index: 1; }
 
     .page-head { text-align: center; margin: 28px 0 24px; }
-    .breadcrumb { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: rgba(255,255,255,.4); margin-bottom: 10px; }
+    .breadcrumb { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: rgba(255,255,255,.6); margin-bottom: 10px; }
     .page-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: 30px; letter-spacing: -.3px; color: #fff; margin-bottom: 8px; }
-    .page-subtitle { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.55); }
+    .page-subtitle { font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.65); }
 
     .card {
       background: rgba(255,255,255,.035);
@@ -55,7 +55,7 @@
     }
     .card-title-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
     .card-title-row .name { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: -.1px; }
-    .card-title-row .name .opsional { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.4); margin-left: 2px; }
+    .card-title-row .name .opsional { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.55); margin-left: 2px; }
 
     .field { margin-bottom: 18px; }
     .field:last-child { margin-bottom: 0; }
@@ -127,7 +127,7 @@
       display: flex; align-items: center; justify-content: space-between;
     }
     .total-box .label { font-size: 12px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: rgba(255,255,255,.85); }
-    .total-box .sub { font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,.5); margin-top: 2px; }
+    .total-box .sub { font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,.65); margin-top: 2px; }
     .total-box .value { font-size: 36px; font-weight: 800; color: #fff; line-height: 1; letter-spacing: -1px; }
 
     .divider {
@@ -200,12 +200,26 @@
     .error-msg.show { display: block; }
     .field-invalid input, .field-invalid select { border-color: #ff8fa3 !important; }
 
+    .submit-error {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: rgba(255,143,163,.1);
+      border: 1px solid rgba(255,143,163,.35);
+      color: #ff8fa3;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .submit-error.show { display: block; }
+
     .footer {
       text-align: center;
       padding: 40px 16px 4px;
       font-size: 12px;
       font-weight: 500;
-      color: rgba(255,255,255,.4);
+      color: rgba(255,255,255,.55);
     }
   </style>
 </head>
@@ -372,7 +386,7 @@
 
     <!-- Link ke Pipeline EDC to LVM -->
     <a id="linkPipelineForm" href="pipeline.html" style="display:none;margin:16px 0 0;padding:16px;border-radius:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;text-decoration:none;align-items:center;justify-content:space-between;gap:10px;">
-      <span style="font-weight:700;font-size:14px;">🔄 Update Progress Konversi EDC to LVM</span>
+      <span style="font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:7px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Update Progress Konversi EDC to LVM</span>
       <span style="font-size:12px;opacity:.75;">Isian form ini otomatis tersimpan →</span>
     </a>
 
@@ -383,16 +397,17 @@
       </div>
 
       <div class="field">
-        <label>Kendala <span style="color:rgba(255,255,255,.4); font-weight:500;">(jika ada)</span></label>
+        <label>Kendala <span style="color:rgba(255,255,255,.55); font-weight:500;">(jika ada)</span></label>
         <textarea id="kendala" placeholder="Kosongkan jika tidak ada kendala"></textarea>
       </div>
       <div class="field">
-        <label>Keterangan Tambahan <span style="color:rgba(255,255,255,.4); font-weight:500;">(jika ada)</span></label>
+        <label>Keterangan Tambahan <span style="color:rgba(255,255,255,.55); font-weight:500;">(jika ada)</span></label>
         <textarea id="keterangan" placeholder="Informasi tambahan (jika ada)"></textarea>
       </div>
     </div>
 
     <!-- Submit -->
+    <div class="submit-error" id="submitError"></div>
     <div class="form-actions">
       <a class="btn-cancel" onclick="history.back()">Batal</a>
       <button type="submit" class="btn-submit" id="btnSubmit">Submit Laporan</button>
@@ -526,7 +541,7 @@ var DATA_CABANG = {
 window.onload = function() {
   // Isi dropdown Area
   var sel = document.getElementById('selectArea');
-  Object.keys(DATA_CABANG).sort().forEach(function(area) {
+  Object.keys(DATA_CABANG).forEach(function(area) {
     var o = document.createElement('option');
     o.value = area; o.textContent = area;
     sel.appendChild(o);
@@ -719,7 +734,7 @@ function updateTotal() {
   var l = parseInt(document.getElementById('jumlahLVM').value) || 0;
   var e = parseInt(document.getElementById('jumlahEDC').value) || 0;
   var p = parseInt(document.getElementById('jumlahEDCPOT').value) || 0;
-  document.getElementById('totalAkuisisi').textContent = l + e + p;
+  document.getElementById('totalAkuisisi').textContent = (l + e + p).toLocaleString('id-ID');
 }
 
 // ── Validasi ────────────────────────────────────────────────────
@@ -767,6 +782,7 @@ function clearErr(wrapId) {
 // ── Submit ──────────────────────────────────────────────────────
 document.getElementById('formLaporan').addEventListener('submit', function(ev) {
   ev.preventDefault();
+  hideSubmitError();
   if (!validasi()) {
     var first = document.querySelector('.field-invalid input, .field-invalid select');
     if (first) first.scrollIntoView({behavior:'smooth', block:'center'});
@@ -809,9 +825,22 @@ document.getElementById('formLaporan').addEventListener('submit', function(ev) {
     .catch(function(err) {
       document.getElementById('loadingOverlay').classList.remove('show');
       document.getElementById('btnSubmit').disabled = false;
-      alert('❌ Gagal menyimpan laporan:\n' + err.message + '\n\nPastikan URL Apps Script sudah benar di file index.html.');
+      showSubmitError('Gagal menyimpan laporan: ' + err.message + '. Pastikan URL Apps Script sudah benar di file index.html.');
     });
 });
+
+function showSubmitError(msg) {
+  var box = document.getElementById('submitError');
+  box.textContent = msg;
+  box.classList.add('show');
+  box.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function hideSubmitError() {
+  var box = document.getElementById('submitError');
+  box.classList.remove('show');
+  box.textContent = '';
+}
 </script>
 </body>
 </html>
