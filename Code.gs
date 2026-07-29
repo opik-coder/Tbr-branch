@@ -847,6 +847,64 @@ function migrasiStatusPipeline() {
 }
 
 /**
+ * Jalankan SEKALI dari Apps Script Editor untuk mengosongkan kolom
+ * "Tanggal Update Terakhir" pada baris-baris sheet "Pipeline EDC to LVM"
+ * yang tanggalnya SAMA dengan TANGGAL_UPLOAD di bawah (28/07/2026).
+ *
+ * Kenapa perlu: data konversi lama yang di-upload manual ke sheet ikut
+ * kebawa kolom "Tanggal Update Terakhir" = tanggal upload, padahal
+ * merchant-merchant itu sebenarnya sudah dikonversi jauh sebelum tanggal
+ * itu. Akibatnya getPipelineUpdatesHariIni() salah mengira baris itu baru
+ * diupdate hari itu, jadi ikut otomatis ditarik ke wording WA laporan
+ * harian cabang terkait — padahal user yang submit laporan tidak
+ * input/update progress apa pun.
+ *
+ * Baris yang MEMANG diupdate via pipeline.html pada TANGGAL_UPLOAD (bukan
+ * bagian dari data upload lama) ikut kena kosongkan juga — kalau ada,
+ * cukup buka pipeline.html & update ulang status merchant tsb supaya
+ * tanggalnya tercatat benar lagi.
+ *
+ * Aman dijalankan lebih dari sekali — baris yang sudah kosong dilewati.
+ */
+function bersihkanTanggalUploadLama() {
+  var TANGGAL_UPLOAD = '28/07/2026'; // ganti tanggal ini kalau perlu bersihkan tanggal lain
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG.NAMA_SHEET_PIPELINE);
+  if (!sheet) {
+    beriTahu('Sheet "' + CONFIG.NAMA_SHEET_PIPELINE + '" tidak ditemukan!');
+    return;
+  }
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) {
+    beriTahu('Sheet "' + CONFIG.NAMA_SHEET_PIPELINE + '" belum ada data.');
+    return;
+  }
+
+  var headers = data[0];
+  var idxTgl = headers.indexOf('Tanggal Update Terakhir');
+  if (idxTgl === -1) {
+    beriTahu('Kolom "Tanggal Update Terakhir" tidak ditemukan di sheet.');
+    return;
+  }
+
+  var jumlahDibersihkan = 0;
+  for (var i = 1; i < data.length; i++) {
+    var nilaiTgl = data[i][idxTgl];
+    if (!nilaiTgl) continue; // sudah kosong, lewati
+    if (formatTanggal(nilaiTgl) === TANGGAL_UPLOAD) {
+      sheet.getRange(i + 1, idxTgl + 1).setValue('');
+      jumlahDibersihkan++;
+    }
+  }
+
+  beriTahu(jumlahDibersihkan > 0
+    ? '✅ ' + jumlahDibersihkan + ' baris dengan tanggal ' + TANGGAL_UPLOAD + ' berhasil dikosongkan.'
+    : '✅ Tidak ada baris dengan tanggal ' + TANGGAL_UPLOAD + ' — mungkin sudah dibersihkan sebelumnya, atau formatnya beda di sheet.');
+}
+
+/**
  * Jalankan SEKALI dari Apps Script Editor untuk menambahkan kolom
  * "Merchant EDC to LVM" dan "Status Progress EDC to LVM" ke sheet
  * "Laporan Harian" kalau belum ada. Aman dijalankan berkali-kali.
