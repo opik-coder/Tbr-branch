@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pipeline Akuisisi Merchant — TBRX Report</title>
+  <title>Pipeline Konversi EDC ke LVM — TBRX Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -307,7 +307,7 @@
 
   <div class="page-head">
     <a class="breadcrumb" href="index.html">← Lanjutkan Laporan</a>
-    <h1 class="page-title">Pipeline Akuisisi Merchant</h1>
+    <h1 class="page-title">Pipeline Konversi EDC ke LVM</h1>
     <div class="page-subtitle" id="headerSubtitle">Memuat data...</div>
   </div>
 
@@ -400,7 +400,7 @@
   </div>
 
   <div class="footer">
-    Pipeline Akuisisi Merchant<br>
+    Pipeline Konversi EDC ke LVM<br>
     <span>Copyright &copy; 2026 TBRX Team</span>
   </div>
 </div>
@@ -902,7 +902,7 @@ function buatWaTeksPipeline(target, status, mid) {
   var tglStr = String(tgl.getDate()).padStart(2, '0') + '/' +
                String(tgl.getMonth() + 1).padStart(2, '0') + '/' + tgl.getFullYear();
   var t = '';
-  t += 'Mohon izin update progress Pipeline Akuisisi Merchant:\n\n';
+  t += 'Mohon izin update progress Pipeline Konversi EDC ke LVM:\n\n';
   t += 'Tanggal : ' + tglStr + '\n';
   t += 'Area    : ' + (target.area || '-') + '\n';
   t += 'Cabang  : ' + target.namaCabang + ' (' + target.kodeCabang + ')\n\n';
