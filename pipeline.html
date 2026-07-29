@@ -95,7 +95,7 @@
       padding: 12px 14px;
       border: 1px solid rgba(255,255,255,.14);
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 16px;
       font-family: inherit;
       font-weight: 500;
       color: #fff;
@@ -139,6 +139,7 @@
       transition: background .2s, border-color .2s;
     }
     .list-item:hover { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.16); }
+    .list-item:focus-visible { outline: none; border-color: rgba(68,114,239,.7); box-shadow: 0 0 0 3px rgba(47,95,224,.3); }
     .list-item:last-child { margin-bottom: 0; }
     .list-item-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .list-item-nama { font-size: 14.5px; font-weight: 700; color: #fff; }
@@ -248,6 +249,7 @@
       transition: background 0.2s;
     }
     .wa-box:hover { background: rgba(255,255,255,.07); }
+    .wa-box:focus-visible { outline: none; border-color: rgba(68,114,239,.7); box-shadow: 0 0 0 3px rgba(47,95,224,.3); }
 
     /* Tombol "Lanjutkan Laporan" — melayang di bawah layar, selalu
        kelihatan walau daftar merchant-nya ribuan baris & panjang banget. */
@@ -484,7 +486,7 @@
 
     <div id="modalWaGroup" style="display:none;">
       <label class="field-label">Wording Laporan WhatsApp</label>
-      <div class="wa-box" id="modalWaText" onclick="copyModalWa()"></div>
+      <div class="wa-box" id="modalWaText" tabindex="0" role="button" aria-label="Salin teks laporan WhatsApp" onclick="copyModalWa()"></div>
       <div class="modal-actions" style="justify-content:space-between;">
         <button class="modal-cancel" id="modalWaClose" type="button">Tutup</button>
         <div style="display:flex;gap:10px;">
@@ -727,6 +729,13 @@ function tampilkanData() {
     if (!item) return;
     bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan, item.dataset.tagging);
   });
+  document.getElementById('listPipeline').addEventListener('keydown', function(ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var item = ev.target.closest('.list-item');
+    if (!item) return;
+    ev.preventDefault();
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan, item.dataset.tagging);
+  });
 
   document.getElementById('modalStatus').addEventListener('change', toggleFieldsByStatus);
   document.getElementById('modalCancel').addEventListener('click', tutupModal);
@@ -736,6 +745,11 @@ function tampilkanData() {
   document.getElementById('modalSave').addEventListener('click', simpanStatus);
   document.getElementById('modalWaClose').addEventListener('click', tutupModal);
   document.getElementById('modalWaCopy').addEventListener('click', copyModalWa);
+  document.getElementById('modalWaText').addEventListener('keydown', function(ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    ev.preventDefault();
+    copyModalWa();
+  });
 }
 
 // ── Isi dropdown Area & Cabang dari data pipeline yang sudah dimuat ──
@@ -891,8 +905,9 @@ function render() {
     var alamatBaris = alamatGabungan ? '<div class="list-item-alamat">' + escHtml(alamatGabungan) + '</div>' : '';
     var tagging = m.tagging && m.tagging !== '-' ? m.tagging : '';
     var taggingBadge = tagging ? '<span class="badge-tag ' + tagClassFor(tagging) + '">' + escHtml(tagging) + '</span>' : '';
+    var ariaLabel = m.namaMerchant + ', status ' + m.status + '. Tekan untuk update progress.';
     return '' +
-      '<div class="list-item" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '" data-alasan="' + escAttr(m.alasan && m.alasan !== '-' ? m.alasan : '') + '" data-tagging="' + escAttr(tagging) + '">' +
+      '<div class="list-item" tabindex="0" role="button" aria-label="' + escAttr(ariaLabel) + '" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '" data-alasan="' + escAttr(m.alasan && m.alasan !== '-' ? m.alasan : '') + '" data-tagging="' + escAttr(tagging) + '">' +
         '<div class="list-item-top">' +
           '<span class="list-item-nama">' + escHtml(m.namaMerchant) + '</span>' +
           '<div class="list-item-badges">' +

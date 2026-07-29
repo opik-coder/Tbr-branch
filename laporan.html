@@ -140,6 +140,7 @@
       transition: background 0.2s;
     }
     .wa-box:hover { background: rgba(255,255,255,.07); }
+    .wa-box:focus-visible { outline: none; border-color: rgba(68,114,239,.7); box-shadow: 0 0 0 3px rgba(47,95,224,.3); }
 
     .btn-group { display: flex; flex-direction: column; gap: 10px; }
     .btn {
@@ -341,7 +342,7 @@
     <div class="card">
       <div class="card-title">Format Laporan WhatsApp</div>
       <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;">Klik teks atau tombol <strong>Copy</strong> untuk menyalin.</p>
-      <div class="wa-box" id="teksWA" onclick="copyLaporan()"></div>
+      <div class="wa-box" id="teksWA" tabindex="0" role="button" aria-label="Salin teks laporan WhatsApp" onclick="copyLaporan()"></div>
     </div>
 
     <!-- Tombol -->
@@ -476,6 +477,12 @@ function tampilkanLaporan(d) {
 
   // Update judul halaman
   document.title = 'Laporan ' + d.namaCabang + ' — ' + d.tanggal;
+
+  document.getElementById('teksWA').addEventListener('keydown', function(ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    ev.preventDefault();
+    copyLaporan();
+  });
 }
 
 function tampilkanError(msg) {
