@@ -601,6 +601,63 @@ function setupSheetPipeline() {
 }
 
 /**
+ * Jalankan SEKALI dari Apps Script Editor untuk menambahkan kolom "MID"
+ * dan "Alasan" ke sheet "Pipeline EDC to LVM" kalau belum ada.
+ *
+ * Kenapa perlu: sheet ini dibuat sebelum kolom MID & Alasan ditambahkan
+ * ke kode (lihat updatePipelineStatus()), jadi keduanya tidak pernah ada
+ * di sheet live. Akibatnya walau modal update status di pipeline.html
+ * sudah mewajibkan isi "Alasan Menolak" (status Merchant Menolak) atau
+ * "MNDI/MID/Nomor Rekening" (status Done Konversi to LVM) dan validasinya
+ * lolos, nilainya SELALU gagal tersimpan secara diam-diam — karena
+ * updatePipelineStatus() cuma menulis ke kolom itu kalau
+ * headers.indexOf('MID')/'Alasan' ketemu (bukan -1). Kolom Status
+ * Progress & Tanggal Update Terakhir tetap kesimpan normal, makanya bug
+ * ini tidak kelihatan dari situ.
+ *
+ * Kolom baru disisipkan tepat sebelum "Tanggal Update Terakhir" supaya
+ * urutannya sama dengan header di getOrCreateSheetPipeline(). Aman
+ * dijalankan berkali-kali — kolom yang sudah ada tidak dibuat dobel.
+ */
+function tambahKolomMidAlasanPipeline() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG.NAMA_SHEET_PIPELINE);
+  if (!sheet) {
+    beriTahu('Sheet "' + CONFIG.NAMA_SHEET_PIPELINE + '" tidak ditemukan!');
+    return;
+  }
+
+  var kolomBaru = ['MID', 'Alasan'];
+  var ditambahkan = [];
+
+  kolomBaru.forEach(function (nama) {
+    var lastCol = sheet.getLastColumn();
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    if (headers.indexOf(nama) !== -1) return; // sudah ada, lewati
+
+    var idxTgl = headers.indexOf('Tanggal Update Terakhir');
+    var posisi;
+    if (idxTgl !== -1) {
+      sheet.insertColumnBefore(idxTgl + 1);
+      posisi = idxTgl + 1;
+    } else {
+      sheet.insertColumnAfter(lastCol);
+      posisi = lastCol + 1;
+    }
+    sheet.getRange(1, posisi).setValue(nama);
+    sheet.getRange(1, posisi)
+      .setFontWeight('bold').setBackground('#1a73e8').setFontColor('#ffffff');
+    ditambahkan.push(nama);
+  });
+
+  if (ditambahkan.length === 0) {
+    beriTahu('✅ Kolom MID & Alasan sudah ada, tidak perlu ditambah lagi.');
+  } else {
+    beriTahu('✅ Kolom berhasil ditambahkan: ' + ditambahkan.join(', ') + '. Update status Merchant Menolak / Done Konversi to LVM berikutnya akan otomatis kesimpan ke kolom ini.');
+  }
+}
+
+/**
  * Ambil daftar merchant EDC (pipeline konversi ke LVM) milik satu cabang,
  * lengkap dengan status progress terkininya. Dipanggil dari form (index.html)
  * lewat action=getMerchantEDC saat cabang dipilih.
