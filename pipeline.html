@@ -1029,7 +1029,6 @@ function simpanStatus() {
   var statusBaru = document.getElementById('modalStatus').value;
   var midValue = document.getElementById('modalMid').value.trim();
   var alasanValue = document.getElementById('modalAlasan').value.trim();
-  var btn = document.getElementById('modalSave');
   var errBox = document.getElementById('modalError');
   errBox.classList.remove('show');
 
@@ -1046,8 +1045,8 @@ function simpanStatus() {
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = 'Menyimpan...';
+  document.getElementById('modalSave').disabled = true;
+  document.getElementById('modalSave').textContent = 'Menyimpan...';
 
   var params = new URLSearchParams({
     action       : 'updateStatus',
@@ -1058,9 +1057,33 @@ function simpanStatus() {
     alasan       : alasanValue
   });
 
+  // Target disalin ke variabel lokal (bukan baca MODAL_TARGET lagi pas
+  // request selesai) — soalnya kalau user tutup modal sebelum retry
+  // selesai, MODAL_TARGET sudah di-null-kan oleh tutupModal().
+  kirimUpdateStatus(params, MODAL_TARGET, statusBaru, midValue, alasanValue, 3);
+}
+
+// Update status aman diulang otomatis (nimpa baris yang sama di sheet,
+// tidak bikin data dobel) — beda dengan submit laporan yang nambah baris
+// baru tiap kali. Sheet Pipeline ribuan baris & sering diakses bersamaan
+// dari banyak cabang, jadi Apps Script kadang lambat/timeout (fetch gagal
+// total, atau balas HTML bukan JSON kalau lagi sibuk). Coba ulang
+// beberapa kali dulu sebelum benar-benar nampilin error ke user, sama
+// seperti pola retry di muatDataPipeline().
+function kirimUpdateStatus(params, target, statusBaru, midValue, alasanValue, sisaPercobaan) {
+  var btn = document.getElementById('modalSave');
+  var errBox = document.getElementById('modalError');
+
   fetch(APPS_SCRIPT_URL + '?' + params.toString())
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
+    .then(function(r) { return r.text(); })
+    .then(function(teks) {
+      var res;
+      try {
+        res = JSON.parse(teks);
+      } catch (e) {
+        throw new Error('respons bukan JSON (server sedang sibuk)');
+      }
+
       btn.disabled = false;
       btn.textContent = 'Simpan';
       if (!res.success) {
@@ -1070,7 +1093,7 @@ function simpanStatus() {
       }
       // Update data lokal supaya list & ringkasan langsung mencerminkan perubahan
       DATA_ALL.forEach(function(m) {
-        if (m.kodeCabang === MODAL_TARGET.kodeCabang && m.namaMerchant === MODAL_TARGET.namaMerchant) {
+        if (m.kodeCabang === target.kodeCabang && m.namaMerchant === target.namaMerchant) {
           m.status = statusBaru;
           if (midValue) m.mid = midValue;
           if (alasanValue) m.alasan = alasanValue;
@@ -1083,6 +1106,13 @@ function simpanStatus() {
       tampilkanWaPipeline(statusBaru, midValue, alasanValue);
     })
     .catch(function(err) {
+      if (sisaPercobaan > 1) {
+        btn.textContent = 'Server sibuk, mencoba lagi...';
+        setTimeout(function() {
+          kirimUpdateStatus(params, target, statusBaru, midValue, alasanValue, sisaPercobaan - 1);
+        }, 2000);
+        return;
+      }
       btn.disabled = false;
       btn.textContent = 'Simpan';
       errBox.textContent = 'Gagal menyimpan: ' + err.message;
