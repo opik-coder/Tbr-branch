@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Progress Area — RTF Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, sans-serif;
+      background: radial-gradient(1100px 620px at 50% 4%, #202f5e 0%, #131c3f 38%, #0a0f24 70%, #05070f 100%);
+      color: #fff;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; }
+    .topbar-brand { display: flex; align-items: center; gap: 10px; }
+    .topbar-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #2f5fe0; color: #fff; font-size: 11px; font-weight: 800;
+      letter-spacing: .3px; padding: 4px 7px; border-radius: 5px; line-height: 1;
+    }
+    .topbar-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 18px; color: #fff; line-height: 1.1; }
+    .topbar-sub { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 2px; }
+    .topbar-nav {
+      font-size: 12.5px; font-weight: 700; color: rgba(255,255,255,.75);
+      text-decoration: none; padding: 8px 16px; border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px; white-space: nowrap;
+    }
+    .topbar-nav:hover { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.3); }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 8px 16px 60px; position: relative; z-index: 1; }
+
+    .page-head { text-align: center; margin: 20px 0 22px; }
+    .page-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: 26px; letter-spacing: -.3px; color: #fff; margin-bottom: 6px; }
+    .page-subtitle { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.55); }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .updated-info { font-size: 12px; color: rgba(255,255,255,.5); }
+    .btn-refresh {
+      padding: 9px 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06); color: #fff; font-size: 12.5px; font-weight: 700;
+      font-family: inherit; cursor: pointer;
+    }
+    .btn-refresh:hover { background: rgba(255,255,255,.12); }
+    .btn-refresh:disabled { opacity: .5; cursor: not-allowed; }
+
+    .table-card {
+      background: rgba(255,255,255,.035);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px -24px rgba(0,0,0,.6);
+    }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    table { border-collapse: collapse; width: 100%; min-width: 1180px; font-size: 12.5px; }
+    th, td { padding: 10px 12px; text-align: center; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,.06); }
+    thead th {
+      background: #0f1b45; color: #fff; font-weight: 700; font-size: 11.5px;
+      position: sticky; top: 0; z-index: 2;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    thead tr.grp th { background: #0a133a; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: rgba(255,255,255,.85); }
+    thead tr.grp th.grp-fu { background: #16307a; }
+    thead tr.grp th.grp-hasil { background: #1c3f9e; }
+    thead tr.grp th.grp-dtd { background: rgba(94,224,138,.18); color: #86efac; }
+
+    td.col-area { text-align: left; font-weight: 700; color: #fff; position: sticky; left: 0; background: #0d1330; z-index: 1; }
+    thead th.col-area { position: sticky; left: 0; z-index: 3; }
+
+    tbody tr:hover td { background: rgba(255,255,255,.03); }
+    tbody tr:hover td.col-area { background: #131a3d; }
+
+    tr.row-total td { background: rgba(68,114,239,.16); font-weight: 800; color: #fff; border-top: 2px solid rgba(68,114,239,.5); }
+    tr.row-total td.col-area { background: #17255e; }
+
+    .num-neg { color: #f87171; }
+    .num-pos { color: #5ee08a; }
+    .pill-fu { font-weight: 700; }
+    .dtd-up   { color: #5ee08a; font-weight: 800; }
+    .dtd-flat { color: rgba(255,255,255,.45); font-weight: 700; }
+    .dtd-down { color: #f87171; font-weight: 800; }
+
+    #loadingState { text-align: center; padding: 60px 20px; color: rgba(255,255,255,.7); }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid rgba(255,255,255,.15);
+      border-top-color: #4472ef;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    #errorState { display:none; text-align:center; padding: 50px 20px; }
+
+    .legend { margin-top: 14px; font-size: 11.5px; color: rgba(255,255,255,.45); line-height: 1.7; }
+    .legend b { color: rgba(255,255,255,.7); }
+
+    .footer { text-align: center; padding: 34px 16px 4px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.4); }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <span class="topbar-badge">R10</span>
+    <div>
+      <div class="topbar-title">RTF Report</div>
+      <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
+    </div>
+  </div>
+  <a class="topbar-nav" href="pipeline.html">Pipeline →</a>
+</div>
+
+<div class="container">
+  <div class="page-head">
+    <h1 class="page-title">Monitoring Progress Pipeline per Area</h1>
+    <div class="page-subtitle" id="headerSubtitle">Follow Up &amp; Hasil Follow Up Akuisisi Merchant</div>
+  </div>
+
+  <div id="loadingState">
+    <div class="spinner"></div>
+    <div id="loadingMsg">Memuat data ringkasan...</div>
+  </div>
+
+  <div id="kontenRingkasan" style="display:none;">
+    <div class="toolbar">
+      <div class="updated-info" id="updatedInfo">Terakhir diperbarui: -</div>
+      <button class="btn-refresh" id="btnRefresh" type="button">↻ Refresh</button>
+    </div>
+
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr class="grp">
+              <th class="col-area" rowspan="2">Area</th>
+              <th rowspan="2">Jumlah Leads<br>Optimalisasi Merchant</th>
+              <th class="grp-fu" colspan="3">Follow Up</th>
+              <th class="grp-hasil" colspan="7">Hasil Follow Up</th>
+              <th class="grp-dtd" rowspan="2">Progress<br>DtD</th>
+            </tr>
+            <tr class="grp">
+              <th class="grp-fu">Jml FU</th>
+              <th class="grp-fu">Sisa Leads</th>
+              <th class="grp-fu">% FU</th>
+              <th class="grp-hasil">Shifting<br>to Optimal</th>
+              <th class="grp-hasil">Konversi<br>Ke LVM</th>
+              <th class="grp-hasil">Tetap Pakai EDC<br>Komit Optimalkan SV</th>
+              <th class="grp-hasil">Penawaran</th>
+              <th class="grp-hasil">Merchant<br>Menolak</th>
+              <th class="grp-hasil">Merchant<br>Tutup</th>
+              <th class="grp-hasil">Perlu Kunjungan<br>MTI</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyArea"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div><b>Sisa Leads</b> = Jml FU − Jumlah Leads (negatif = follow up belum menyentuh semua leads).</div>
+      <div><b>Progress DtD</b> = pertambahan Jml FU dibanding snapshot kemarin (Day to Day).</div>
+      <div><b>Shifting to Optimal</b> diisi manual di sheet "Data Statis Area" — kategori lain dihitung otomatis dari Status Progress di sheet Pipeline EDC to LVM.</div>
+    </div>
+  </div>
+
+  <div id="errorState">
+    <div style="font-size:44px;margin-bottom:16px;">⚠</div>
+    <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;margin-bottom:8px;color:#fff;">Gagal Memuat Data</h2>
+    <p style="color:rgba(255,255,255,.55);font-size:13.5px;" id="errorMsg">Terjadi kesalahan saat mengambil data ringkasan.</p>
+  </div>
+
+  <div class="footer">
+    Monitoring Progress Pipeline · RTF Team<br>
+    <span>Copyright &copy; 2026 RTF Team</span>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// ⚙️ KONFIGURASI — GANTI URL INI DENGAN URL APPS SCRIPT ANDA
+// ================================================================
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl4SiO8CeyYrF4vDwmx5D0n8qjcq3Vk5HHwFt56grTdyouKEyOAmiB6-vKurKTXS9U/exec";
+// ================================================================
+
+window.onload = function() {
+  muatRingkasan(3);
+  document.getElementById('btnRefresh').addEventListener('click', function() {
+    document.getElementById('btnRefresh').disabled = true;
+    document.getElementById('btnRefresh').textContent = '↻ Memuat...';
+    muatRingkasan(2);
+  });
+};
+
+// Sheet Pipeline berisi ribuan baris, jadi request bisa sesekali dibalas
+// halaman HTML (bukan JSON) kalau Apps Script lagi sibuk — coba ulang
+// otomatis sebelum benar-benar menampilkan error.
+function muatRingkasan(sisaPercobaan) {
+  fetch(APPS_SCRIPT_URL + '?action=getRingkasanArea')
+    .then(function(r) { return r.text(); })
+    .then(function(teks) {
+      var res;
+      try { res = JSON.parse(teks); }
+      catch (e) { throw new Error('respons bukan JSON (server sedang sibuk)'); }
+      if (res.error) { tampilkanError(res.error); return; }
+      tampilkanRingkasan(res);
+    })
+    .catch(function(err) {
+      if (sisaPercobaan > 1) {
+        var msg = document.getElementById('loadingMsg');
+        if (msg) msg.textContent = 'Server sedang sibuk, mencoba lagi...';
+        setTimeout(function() { muatRingkasan(sisaPercobaan - 1); }, 2000);
+        return;
+      }
+      tampilkanError('Gagal memuat data: ' + err.message + '. Coba muat ulang halaman.');
+    });
+}
+
+var KATEGORI_HASIL_FU = [
+  'shiftingToOptimal',
+  'Done Konversi to LVM',
+  'Tetap pakai EDC & Optimalkan SV',
+  'Penawaran',
+  'Merchant Menolak',
+  'Merchant Tutup',
+  'Perlu Kunjungan MTI'
+];
+
+function formatAngka(n) {
+  return Number(n || 0).toLocaleString('id-ID');
+}
+
+function kelasSisaLeads(n) {
+  return n < 0 ? 'num-neg' : (n > 0 ? 'num-pos' : '');
+}
+
+function kelasDtd(n) {
+  if (n > 0) return 'dtd-up';
+  if (n < 0) return 'dtd-down';
+  return 'dtd-flat';
+}
+
+function labelDtd(n) {
+  if (n > 0) return '▲ +' + formatAngka(n);
+  if (n < 0) return '▼ ' + formatAngka(n);
+  return '– 0';
+}
+
+function baris(r, isTotal) {
+  var tds = '';
+  tds += '<td class="col-area">' + r.area + '</td>';
+  tds += '<td>' + formatAngka(r.jumlahLeads) + '</td>';
+  tds += '<td class="pill-fu">' + formatAngka(r.jmlFU) + '</td>';
+  tds += '<td class="' + kelasSisaLeads(r.sisaLeads) + '">' + formatAngka(r.sisaLeads) + '</td>';
+  tds += '<td>' + r.persenFU.toFixed(1) + '%</td>';
+  tds += '<td>' + formatAngka(r.shiftingToOptimal) + '</td>';
+  tds += '<td>' + formatAngka(r['Done Konversi to LVM']) + '</td>';
+  tds += '<td>' + formatAngka(r['Tetap pakai EDC & Optimalkan SV']) + '</td>';
+  tds += '<td>' + formatAngka(r['Penawaran']) + '</td>';
+  tds += '<td>' + formatAngka(r['Merchant Menolak']) + '</td>';
+  tds += '<td>' + formatAngka(r['Merchant Tutup']) + '</td>';
+  tds += '<td>' + formatAngka(r['Perlu Kunjungan MTI']) + '</td>';
+  tds += '<td class="' + kelasDtd(r.dtd) + '">' + labelDtd(r.dtd) + '</td>';
+  return '<tr' + (isTotal ? ' class="row-total"' : '') + '>' + tds + '</tr>';
+}
+
+function tampilkanRingkasan(res) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('kontenRingkasan').style.display = 'block';
+  document.getElementById('btnRefresh').disabled = false;
+  document.getElementById('btnRefresh').textContent = '↻ Refresh';
+
+  document.getElementById('updatedInfo').textContent = 'Terakhir diperbarui: ' + (res.diperbarui || '-');
+
+  var html = res.area.map(function(r) { return baris(r, false); }).join('');
+  html += baris(res.total, true);
+  document.getElementById('tbodyArea').innerHTML = html;
+}
+
+function tampilkanError(msg) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('kontenRingkasan').style.display = 'none';
+  document.getElementById('errorState').style.display = 'block';
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('btnRefresh').disabled = false;
+  document.getElementById('btnRefresh').textContent = '↻ Refresh';
+}
+</script>
+</body>
+</html>
