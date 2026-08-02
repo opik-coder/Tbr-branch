@@ -398,10 +398,24 @@ window.onload = function() {
     return;
   }
 
+  // Cek dulu status maintenance sebelum ambil laporan. Kalau gagal ngecek
+  // (network hiccup dll), tetep lanjut normal — jangan sampai user ke-block
+  // gara-gara cekMaintenance doang yang gagal.
+  fetch(APPS_SCRIPT_URL + '?action=cekMaintenance')
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.maintenance) { window.location.href = 'maintenance.html'; return; }
+      muatLaporan(id);
+    })
+    .catch(function() { muatLaporan(id); });
+};
+
+function muatLaporan(id) {
   // Ambil data laporan dari Apps Script
   fetch(APPS_SCRIPT_URL + '?action=getData&id=' + encodeURIComponent(id))
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      if (data && data.maintenance) { window.location.href = 'maintenance.html'; return; }
       if (!data || data.error) {
         tampilkanError('Laporan dengan ID <strong>' + id + '</strong> tidak ditemukan.');
         return;
