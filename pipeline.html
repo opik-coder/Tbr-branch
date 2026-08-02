@@ -469,6 +469,7 @@
     <div class="modal-title" id="modalMerchant">-</div>
     <div class="modal-sub" id="modalCabang">-</div>
     <div class="modal-sub" id="modalAlamat" style="margin-top:-14px;"></div>
+    <div class="modal-sub" id="modalMidMerchant" style="margin-top:-14px;font-size:11px;opacity:.6;"></div>
     <div id="modalTaggingWrap" style="display:none;margin-top:8px;"><span class="badge-tag" id="modalTagging"></span></div>
 
     <div id="modalFormGroup">
@@ -784,14 +785,14 @@ function tampilkanData() {
   document.getElementById('listPipeline').addEventListener('click', function(ev) {
     var item = ev.target.closest('.list-item');
     if (!item) return;
-    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan, item.dataset.tagging);
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan, item.dataset.tagging, item.dataset.midmerchant);
   });
   document.getElementById('listPipeline').addEventListener('keydown', function(ev) {
     if (ev.key !== 'Enter' && ev.key !== ' ') return;
     var item = ev.target.closest('.list-item');
     if (!item) return;
     ev.preventDefault();
-    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan, item.dataset.tagging);
+    bukaModal(item.dataset.kode, item.dataset.merchant, item.dataset.status, item.dataset.namaCabang, item.dataset.alamat, item.dataset.mid, item.dataset.area, item.dataset.alasan, item.dataset.tagging, item.dataset.midmerchant);
   });
 
   document.getElementById('modalStatus').addEventListener('change', toggleFieldsByStatus);
@@ -990,7 +991,12 @@ function render() {
     var taggingBadge = tagging ? '<span class="badge-tag ' + tagClassFor(tagging) + '">' + escHtml(tagging) + '</span>' : '';
     var ariaLabel = m.namaMerchant + ', status ' + m.status + '. Tekan untuk update progress.';
     return '' +
-      '<div class="list-item" tabindex="0" role="button" aria-label="' + escAttr(ariaLabel) + '" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(alamatGabungan) + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '" data-alasan="' + escAttr(m.alasan && m.alasan !== '-' ? m.alasan : '') + '" data-tagging="' + escAttr(tagging) + '">' +
+      // Catatan: data-alamat pakai m.alamat MENTAH (bukan alamatGabungan yang
+      // sudah digabung dgn Kota buat tampilan) — soalnya ini dikirim balik ke
+      // server buat dicocokkan persis dengan isi kolom "Alamat" di sheet.
+      // data-midmerchant = ID unik merchant dari core banking (kolom "MID"
+      // pertama), pembeda paling akurat kalau ada merchant beda tapi nama sama.
+      '<div class="list-item" tabindex="0" role="button" aria-label="' + escAttr(ariaLabel) + '" data-kode="' + escAttr(m.kodeCabang) + '" data-merchant="' + escAttr(m.namaMerchant) + '" data-status="' + escAttr(m.status) + '" data-nama-cabang="' + escAttr(namaCabang) + '" data-area="' + escAttr(areaResmi(m)) + '" data-alamat="' + escAttr(m.alamat && m.alamat !== '-' ? m.alamat : '') + '" data-midmerchant="' + escAttr(m.midMerchant && m.midMerchant !== '-' ? m.midMerchant : '') + '" data-mid="' + escAttr(m.mid && m.mid !== '-' ? m.mid : '') + '" data-alasan="' + escAttr(m.alasan && m.alasan !== '-' ? m.alasan : '') + '" data-tagging="' + escAttr(tagging) + '">' +
         '<div class="list-item-top">' +
           '<span class="list-item-nama">' + escHtml(m.namaMerchant) + '</span>' +
           '<div class="list-item-badges">' +
@@ -1015,15 +1021,19 @@ function escAttr(s) {
 // ── Modal update status ──────────────────────────────────────────
 var STATUS_VALID = ['Target', 'Penawaran', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI', 'Tetap pakai EDC & Optimalkan SV'];
 
-function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area, alasan, tagging) {
-  // Alamat ikut disimpan di MODAL_TARGET & dikirim balik ke server sebagai
-  // pembeda tambahan — banyak merchant beda (alamat beda) yang kebetulan
+function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area, alasan, tagging, midMerchant) {
+  // Alamat & midMerchant ikut disimpan di MODAL_TARGET & dikirim balik ke
+  // server sebagai pembeda tambahan — banyak merchant beda yang kebetulan
   // punya nama sama persis dalam 1 cabang (mis. franchise "Restoran
   // Sederhana"), jadi Kode Cabang + Nama Merchant doang tidak selalu unik.
-  MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-', alamat: alamat || '' };
+  // midMerchant (ID unik dari core banking) paling diandalkan; alamat jadi
+  // cadangan kalau midMerchant tidak tersedia. Lihat updatePipelineStatus()
+  // di Code.gs buat urutan prioritasnya.
+  MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-', alamat: alamat || '', midMerchant: midMerchant || '' };
   document.getElementById('modalMerchant').textContent = namaMerchant;
   document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
   document.getElementById('modalAlamat').textContent = alamat || '';
+  document.getElementById('modalMidMerchant').textContent = midMerchant ? ('MID Merchant: ' + midMerchant) : '';
   document.getElementById('modalMid').value = mid || '';
   document.getElementById('modalAlasan').value = alasan || '';
   if (tagging) {
@@ -1086,6 +1096,7 @@ function simpanStatus() {
     kodeCabang   : MODAL_TARGET.kodeCabang,
     namaMerchant : MODAL_TARGET.namaMerchant,
     alamat       : MODAL_TARGET.alamat || '',
+    midMerchant  : MODAL_TARGET.midMerchant || '',
     status       : statusBaru,
     mid          : midValue,
     alasan       : alasanValue
