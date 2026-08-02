@@ -538,7 +538,22 @@ var DATA_CABANG = {
 };
 
 // ── Init ────────────────────────────────────────────────────────
+// Cek status maintenance di background begitu halaman kebuka — kalau
+// aktif, langsung dialihkan ke maintenance.html. Sengaja tidak nge-block
+// inisialisasi form di bawah (dropdown Area, draft, dll) supaya form tetap
+// kelihatan responsif; begitu hasil cek datang & ternyata maintenance, user
+// langsung dialihkan. Kalau gagal ngecek (network hiccup dll), diamkan
+// saja — jangan sampai user ke-block gara-gara cekMaintenance doang gagal.
+function cekMaintenance() {
+  fetch(APPS_SCRIPT_URL + '?action=cekMaintenance')
+    .then(function(r) { return r.json(); })
+    .then(function(res) { if (res.maintenance) window.location.href = 'maintenance.html'; })
+    .catch(function() {});
+}
+
 window.onload = function() {
+  cekMaintenance();
+
   // Isi dropdown Area
   var sel = document.getElementById('selectArea');
   Object.keys(DATA_CABANG).forEach(function(area) {
@@ -815,6 +830,10 @@ document.getElementById('formLaporan').addEventListener('submit', function(ev) {
   fetch(APPS_SCRIPT_URL + '?' + params.toString())
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      if (data.maintenance) {
+        window.location.href = 'maintenance.html';
+        return;
+      }
       if (data.success && data.idLaporan) {
         hapusDraft();
         window.location.href = 'laporan.html?id=' + data.idLaporan;
