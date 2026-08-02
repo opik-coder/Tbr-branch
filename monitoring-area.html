@@ -254,8 +254,21 @@ window.onload = function() {
 // sekali) sebelum manggil getRingkasanArea yang berat. Kalau gagal ngecek
 // (network hiccup dll), tetep lanjut normal — jangan sampai user ke-block
 // gara-gara cekMaintenance doang yang gagal.
+// Tambahin parameter waktu (timestamp) unik + { cache: 'no-store' } di
+// SETIAP fetch ke Apps Script — tanpa ini, browser (atau cache di
+// jaringan/proxy) bisa nyimpen & terus-menerus ngebalikin hasil fetch GET
+// yang lama untuk URL yang persis sama, walau datanya di sheet udah
+// berubah. Ini yang bikin monitoring-area.html sempat masih nampilin Total
+// Leads lama (4.248) padahal endpoint yang dites langsung di tab baru udah
+// bener (4.174) — beda tab = beda cache entry, jadi kelihatan "benar" di
+// satu tempat tapi "salah" di tempat lain.
+function _urlNoCache(url) {
+  var sep = url.indexOf('?') === -1 ? '?' : '&';
+  return url + sep + '_ts=' + Date.now();
+}
+
 function cekMaintenanceLaluMuat() {
-  fetch(APPS_SCRIPT_URL + '?action=cekMaintenance')
+  fetch(_urlNoCache(APPS_SCRIPT_URL + '?action=cekMaintenance'), { cache: 'no-store' })
     .then(function(r) { return r.text(); })
     .then(function(teks) {
       var res = JSON.parse(teks);
@@ -269,7 +282,7 @@ function cekMaintenanceLaluMuat() {
 // halaman HTML (bukan JSON) kalau Apps Script lagi sibuk — coba ulang
 // otomatis sebelum benar-benar menampilkan error.
 function muatRingkasan(sisaPercobaan) {
-  fetch(APPS_SCRIPT_URL + '?action=getRingkasanArea')
+  fetch(_urlNoCache(APPS_SCRIPT_URL + '?action=getRingkasanArea'), { cache: 'no-store' })
     .then(function(r) { return r.text(); })
     .then(function(teks) {
       var res;
@@ -355,7 +368,7 @@ function kirimLaporanRegion() {
   btn.disabled = true;
   var teksAsal = btn.textContent;
   btn.textContent = 'Menyiapkan...';
-  fetch(APPS_SCRIPT_URL + '?action=getWaLaporanRegion')
+  fetch(_urlNoCache(APPS_SCRIPT_URL + '?action=getWaLaporanRegion'), { cache: 'no-store' })
     .then(function(r) { return r.text(); })
     .then(function(teks) {
       var res = JSON.parse(teks);
@@ -372,7 +385,7 @@ function kirimLaporanArea(ev, namaArea) {
   btn.disabled = true;
   var teksAsal = btn.textContent;
   btn.textContent = '...';
-  fetch(APPS_SCRIPT_URL + '?action=getWaLaporanArea&area=' + encodeURIComponent(namaArea))
+  fetch(_urlNoCache(APPS_SCRIPT_URL + '?action=getWaLaporanArea&area=' + encodeURIComponent(namaArea)), { cache: 'no-store' })
     .then(function(r) { return r.text(); })
     .then(function(teks) {
       var res = JSON.parse(teks);
