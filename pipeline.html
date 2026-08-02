@@ -20,6 +20,7 @@
 
     /* Top brand bar */
     .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; }
+    .topbar-nav-group { display: flex; align-items: center; gap: 8px; }
     .topbar-brand { display: flex; align-items: center; gap: 10px; }
     .topbar-mark { height: 42px; width: auto; display: block; flex-shrink: 0; }
     .topbar-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 18px; color: #fff; line-height: 1.1; }
@@ -339,7 +340,10 @@
       <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
     </div>
   </div>
-  <a class="topbar-nav" href="index.html">Lanjutkan Laporan →</a>
+  <div class="topbar-nav-group">
+    <a class="topbar-nav" href="monitoring-area.html">Monitoring</a>
+    <a class="topbar-nav" href="index.html">Lanjutkan Laporan →</a>
+  </div>
 </div>
 
 <div class="container">
@@ -677,8 +681,17 @@ window.onload = function() {
 // butuh beberapa detik untuk di-scan Apps Script — sesekali Google
 // membalas dengan halaman HTML (bukan JSON) kalau lagi sibuk/throttled.
 // Coba ulang otomatis beberapa kali sebelum benar-benar menampilkan error.
+//
+// Catatan penting: pipeline.html biasanya dibuka lewat link yang SAMA
+// persis tiap kali (mis. pipeline.html?kode=17008), jadi URL fetch ke
+// Apps Script juga selalu sama persis. Browser bisa menyimpan respons GET
+// itu di HTTP cache-nya — akibatnya setelah user isi follow up lalu
+// refresh halaman, yang muncul adalah data LAMA dari cache, bukan data
+// terbaru dari sheet (walaupun sheet-nya sendiri sudah benar terupdate).
+// Makanya selalu tambah parameter anti-cache (_ts) & matikan fetch cache.
 function muatDataPipeline(url, sisaPercobaan) {
-  fetch(url)
+  var urlAntiCache = url + (url.indexOf('?') === -1 ? '?' : '&') + '_ts=' + Date.now();
+  fetch(urlAntiCache, { cache: 'no-store' })
     .then(function(r) { return r.text(); })
     .then(function(teks) {
       var res;
