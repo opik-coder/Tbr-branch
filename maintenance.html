@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sedang Pemeliharaan — RTF Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, sans-serif;
+      background: radial-gradient(1100px 620px at 50% 4%, #202f5e 0%, #131c3f 38%, #0a0f24 70%, #05070f 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      background: rgba(255,255,255,.035);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 20px;
+      padding: 44px 32px 36px;
+      box-shadow: 0 24px 60px -24px rgba(0,0,0,.65);
+    }
+
+    .icon { font-size: 46px; margin-bottom: 18px; animation: pulse 2.2s ease-in-out infinite; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #2f5fe0; color: #fff; font-size: 11px; font-weight: 800;
+      letter-spacing: .3px; padding: 4px 10px; border-radius: 999px; line-height: 1;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif; font-weight: 800;
+      font-size: 24px; letter-spacing: -.3px; color: #fff; margin-bottom: 12px;
+    }
+    p { font-size: 13.5px; line-height: 1.6; color: rgba(255,255,255,.65); margin-bottom: 8px; }
+    p.sub { font-size: 12px; color: rgba(255,255,255,.4); margin-top: 14px; margin-bottom: 26px; }
+
+    .btn-cek {
+      padding: 12px 28px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08); color: #fff; font-size: 13.5px; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: background .2s, border-color .2s;
+    }
+    .btn-cek:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.35); }
+    .btn-cek:disabled { opacity: .5; cursor: not-allowed; }
+
+    .status-msg { margin-top: 14px; font-size: 12px; color: rgba(255,255,255,.45); min-height: 16px; }
+
+    .spinner-inline {
+      display: inline-block; width: 13px; height: 13px; vertical-align: -2px;
+      border: 2px solid rgba(255,255,255,.25); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite; margin-right: 6px;
+    }
+
+    .footer { margin-top: 28px; font-size: 11px; color: rgba(255,255,255,.3); }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="badge">R10 · TBRX Daily Reporting</div>
+    <div class="icon">🛠️</div>
+    <h1>Sedang Dalam Pemeliharaan</h1>
+    <p>Data laporan sedang disesuaikan oleh tim Region X.</p>
+    <p>Form pelaporan, Pipeline EDC to LVM, dan Monitoring Area sementara belum bisa diakses.</p>
+    <p class="sub">Coba lagi dalam beberapa saat.</p>
+
+    <button class="btn-cek" id="btnCek" type="button">↻ Cek Status Lagi</button>
+    <div class="status-msg" id="statusMsg"></div>
+
+    <div class="footer">RTF Team · Region X / Sulawesi &amp; Maluku</div>
+  </div>
+
+<script>
+// ================================================================
+// ⚙️ Samain dengan URL Apps Script di index.html / pipeline.html / dll.
+// ================================================================
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl4SiO8CeyYrF4vDwmx5D0n8qjcq3Vk5HHwFt56grTdyouKEyOAmiB6-vKurKTXS9U/exec";
+// ================================================================
+
+var btnCek     = document.getElementById('btnCek');
+var statusMsg  = document.getElementById('statusMsg');
+
+btnCek.addEventListener('click', cekStatus);
+
+function cekStatus() {
+  btnCek.disabled = true;
+  statusMsg.innerHTML = '<span class="spinner-inline"></span>Mengecek status...';
+
+  fetch(APPS_SCRIPT_URL + '?action=cekMaintenance')
+    .then(function (r) { return r.text(); })
+    .then(function (teks) {
+      var res;
+      try { res = JSON.parse(teks); }
+      catch (e) { throw new Error('respons bukan JSON'); }
+
+      if (!res.maintenance) {
+        statusMsg.textContent = '✅ Sudah normal, mengalihkan...';
+        setTimeout(function () { window.location.href = 'index.html'; }, 700);
+      } else {
+        statusMsg.textContent = 'Masih dalam pemeliharaan. Coba lagi nanti.';
+        btnCek.disabled = false;
+      }
+    })
+    .catch(function () {
+      statusMsg.textContent = 'Gagal mengecek status. Coba lagi.';
+      btnCek.disabled = false;
+    });
+}
+</script>
+</body>
+</html>
