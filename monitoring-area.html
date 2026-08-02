@@ -82,6 +82,27 @@
     tr.row-total td { background: rgba(68,114,239,.16); font-weight: 800; color: #fff; border-top: 2px solid rgba(68,114,239,.5); }
     tr.row-total td.col-area { background: #17255e; }
 
+    tr.row-area { cursor: pointer; }
+    .expand-icon { display: inline-block; width: 12px; margin-right: 6px; color: rgba(255,255,255,.4); transition: transform .15s; }
+    tr.row-area.expanded .expand-icon { transform: rotate(90deg); }
+    .jml-cabang { font-weight: 500; font-size: 11px; color: rgba(255,255,255,.4); margin-left: 4px; }
+
+    tr.row-cabang-wrap { display: none; }
+    tr.row-cabang-wrap.show { display: table-row; }
+    tr.row-cabang-wrap td { padding: 0; background: rgba(0,0,0,.18); }
+
+    table.subtable { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    table.subtable th {
+      background: #0a1030; color: rgba(255,255,255,.55); font-weight: 700;
+      font-size: 10px; text-transform: uppercase; letter-spacing: .3px;
+      padding: 7px 12px 7px 30px; position: static;
+    }
+    table.subtable th:first-child { text-align: left; }
+    table.subtable td { padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,.04); }
+    table.subtable td.col-cabang { text-align: left; padding-left: 30px; position: static; background: transparent; font-weight: 600; }
+    table.subtable tr:hover td { background: rgba(255,255,255,.03); }
+    .kode-cabang { color: rgba(255,255,255,.35); font-weight: 500; font-size: 10.5px; }
+
     .num-neg { color: #f87171; }
     .num-pos { color: #5ee08a; }
     .pill-fu { font-weight: 700; }
@@ -167,9 +188,12 @@
     </div>
 
     <div class="legend">
-      <div><b>Sisa Leads</b> = Jml FU − Jumlah Leads (negatif = follow up belum menyentuh semua leads).</div>
-      <div><b>Progress DtD</b> = pertambahan Jml FU dibanding snapshot kemarin (Day to Day).</div>
-      <div><b>Shifting to Optimal</b> diisi manual di sheet "Data Statis Area" — kategori lain dihitung otomatis dari Status Progress di sheet Pipeline EDC to LVM.</div>
+      <div>💡 Klik baris Area buat lihat breakdown per Cabang di dalamnya.</div>
+      <div><b>Jumlah Leads</b> = baris merchant aktif di sheet Pipeline + Shifting to Optimal (merchant yang udah "lulus" & udah nggak muncul lagi di Pipeline aktif).</div>
+      <div><b>Sisa Leads</b> = Jml FU − Jumlah Leads (negatif = masih ada leads berstatus "Target", belum di-follow-up).</div>
+      <div><b>% FU</b> dijamin nggak akan lewat 100%, karena Shifting to Optimal ikut dihitung di Jumlah Leads maupun Jml FU.</div>
+      <div><b>Progress DtD</b> = pertambahan Jml FU dibanding snapshot kemarin (Day to Day), dihitung per Cabang lalu dijumlah ke Area.</div>
+      <div><b>Shifting to Optimal</b> diisi manual per Cabang di sheet "Data Statis Cabang" — kategori lain dihitung otomatis dari Status Progress di sheet Pipeline EDC to LVM.</div>
     </div>
   </div>
 
@@ -225,16 +249,6 @@ function muatRingkasan(sisaPercobaan) {
     });
 }
 
-var KATEGORI_HASIL_FU = [
-  'shiftingToOptimal',
-  'Done Konversi to LVM',
-  'Tetap pakai EDC & Optimalkan SV',
-  'Penawaran',
-  'Merchant Menolak',
-  'Merchant Tutup',
-  'Perlu Kunjungan MTI'
-];
-
 function formatAngka(n) {
   return Number(n || 0).toLocaleString('id-ID');
 }
@@ -255,10 +269,10 @@ function labelDtd(n) {
   return '– 0';
 }
 
-function baris(r, isTotal) {
+function selMetrik(r) {
+  // 7 sel "Hasil Follow Up" + Sisa Leads/%FU/DtD — dipakai bareng buat
+  // baris Area maupun baris Cabang, field-nya sama persis.
   var tds = '';
-  tds += '<td class="col-area">' + r.area + '</td>';
-  tds += '<td>' + formatAngka(r.jumlahLeads) + '</td>';
   tds += '<td class="pill-fu">' + formatAngka(r.jmlFU) + '</td>';
   tds += '<td class="' + kelasSisaLeads(r.sisaLeads) + '">' + formatAngka(r.sisaLeads) + '</td>';
   tds += '<td>' + r.persenFU.toFixed(1) + '%</td>';
@@ -270,7 +284,42 @@ function baris(r, isTotal) {
   tds += '<td>' + formatAngka(r['Merchant Tutup']) + '</td>';
   tds += '<td>' + formatAngka(r['Perlu Kunjungan MTI']) + '</td>';
   tds += '<td class="' + kelasDtd(r.dtd) + '">' + labelDtd(r.dtd) + '</td>';
+  return tds;
+}
+
+function baris(r, isTotal) {
+  var tds = '<td class="col-area">' + r.area + '</td><td>' + formatAngka(r.jumlahLeads) + '</td>' + selMetrik(r);
   return '<tr' + (isTotal ? ' class="row-total"' : '') + '>' + tds + '</tr>';
+}
+
+function barisArea(r, idx) {
+  var tds = '<td class="col-area">'
+    + '<span class="expand-icon">▶</span>' + r.area
+    + '<span class="jml-cabang"> (' + r.cabang.length + ' cabang)</span></td>'
+    + '<td>' + formatAngka(r.jumlahLeads) + '</td>' + selMetrik(r);
+  var baris1 = '<tr class="row-area" data-idx="' + idx + '" onclick="toggleArea(' + idx + ')">' + tds + '</tr>';
+  var baris2 = '<tr class="row-cabang-wrap" id="wrapArea' + idx + '">'
+    + '<td colspan="13">' + buatSubtableCabang(r.cabang) + '</td></tr>';
+  return baris1 + baris2;
+}
+
+function buatSubtableCabang(daftar) {
+  var head = '<tr><th>Cabang</th><th>Leads</th><th>Jml FU</th><th>Sisa</th><th>%FU</th>'
+    + '<th>Shifting</th><th>Konversi LVM</th><th>Tetap EDC</th><th>Penawaran</th>'
+    + '<th>Menolak</th><th>Tutup</th><th>MTI</th><th>DtD</th></tr>';
+  var rows = daftar.map(function (c) {
+    var tds = '<td class="col-cabang">' + c.nama + ' <span class="kode-cabang">(' + c.kode + ')</span></td>'
+      + '<td>' + formatAngka(c.jumlahLeads) + '</td>' + selMetrik(c);
+    return '<tr>' + tds + '</tr>';
+  }).join('');
+  return '<table class="subtable"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>';
+}
+
+function toggleArea(idx) {
+  var wrap = document.getElementById('wrapArea' + idx);
+  var rowArea = document.querySelector('tr.row-area[data-idx="' + idx + '"]');
+  var showing = wrap.classList.toggle('show');
+  rowArea.classList.toggle('expanded', showing);
 }
 
 function tampilkanRingkasan(res) {
@@ -282,7 +331,7 @@ function tampilkanRingkasan(res) {
 
   document.getElementById('updatedInfo').textContent = 'Terakhir diperbarui: ' + (res.diperbarui || '-');
 
-  var html = res.area.map(function(r) { return baris(r, false); }).join('');
+  var html = res.area.map(function(r, idx) { return barisArea(r, idx); }).join('');
   html += baris(res.total, true);
   document.getElementById('tbodyArea').innerHTML = html;
 }
