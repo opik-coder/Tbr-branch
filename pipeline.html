@@ -1016,7 +1016,11 @@ function escAttr(s) {
 var STATUS_VALID = ['Target', 'Penawaran', 'Done Konversi to LVM', 'Merchant Menolak', 'Merchant Tutup', 'Perlu Kunjungan MTI', 'Tetap pakai EDC & Optimalkan SV'];
 
 function bukaModal(kodeCabang, namaMerchant, statusSaatIni, namaCabang, alamat, mid, area, alasan, tagging) {
-  MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-' };
+  // Alamat ikut disimpan di MODAL_TARGET & dikirim balik ke server sebagai
+  // pembeda tambahan — banyak merchant beda (alamat beda) yang kebetulan
+  // punya nama sama persis dalam 1 cabang (mis. franchise "Restoran
+  // Sederhana"), jadi Kode Cabang + Nama Merchant doang tidak selalu unik.
+  MODAL_TARGET = { kodeCabang: kodeCabang, namaMerchant: namaMerchant, namaCabang: namaCabang, area: area || '-', alamat: alamat || '' };
   document.getElementById('modalMerchant').textContent = namaMerchant;
   document.getElementById('modalCabang').textContent = namaCabang + ' (' + kodeCabang + ')';
   document.getElementById('modalAlamat').textContent = alamat || '';
@@ -1081,6 +1085,7 @@ function simpanStatus() {
     action       : 'updateStatus',
     kodeCabang   : MODAL_TARGET.kodeCabang,
     namaMerchant : MODAL_TARGET.namaMerchant,
+    alamat       : MODAL_TARGET.alamat || '',
     status       : statusBaru,
     mid          : midValue,
     alasan       : alasanValue
