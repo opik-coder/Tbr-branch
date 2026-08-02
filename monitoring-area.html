@@ -188,12 +188,11 @@
     </div>
 
     <div class="legend">
-      <div>💡 Klik baris Area buat lihat breakdown per Cabang di dalamnya.</div>
-      <div><b>Jumlah Leads</b> = baris merchant aktif di sheet Pipeline + Shifting to Optimal (merchant yang udah "lulus" & udah nggak muncul lagi di Pipeline aktif).</div>
-      <div><b>Sisa Leads</b> = Jml FU − Jumlah Leads (negatif = masih ada leads berstatus "Target", belum di-follow-up).</div>
-      <div><b>% FU</b> dijamin nggak akan lewat 100%, karena Shifting to Optimal ikut dihitung di Jumlah Leads maupun Jml FU.</div>
-      <div><b>Progress DtD</b> = pertambahan Jml FU dibanding snapshot kemarin (Day to Day), dihitung per Cabang lalu dijumlah ke Area.</div>
-      <div><b>Shifting to Optimal</b> diisi manual per Cabang di sheet "Data Statis Cabang" — kategori lain dihitung otomatis dari Status Progress di sheet Pipeline EDC to LVM.</div>
+      <div>💡 Klik baris Area untuk menampilkan rincian per Cabang di dalamnya.</div>
+      <div><b>Jumlah Leads</b> merupakan jumlah baris merchant pada sheet Pipeline apa adanya, termasuk merchant yang sudah Shifting to Optimal.</div>
+      <div><b>Sisa Leads</b> dihitung dari Jml FU dikurangi Jumlah Leads (nilai negatif menunjukkan masih terdapat leads berstatus "Target" yang belum ditindaklanjuti).</div>
+      <div><b>Progress DtD</b> merupakan pertambahan Jml FU dibandingkan snapshot hari sebelumnya (Day to Day), dihitung per Cabang kemudian dijumlahkan ke tingkat Area.</div>
+      <div><b>Shifting to Optimal</b> diperbarui berdasarkan data dari EDA dan diinput per Cabang pada sheet "Data Statis Cabang"; kategori lainnya dihitung otomatis berdasarkan Status Progress pada sheet Pipeline EDC to LVM.</div>
     </div>
   </div>
 
