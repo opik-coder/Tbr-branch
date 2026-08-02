@@ -169,35 +169,6 @@
 
     .empty { text-align: center; padding: 24px; color: rgba(255,255,255,.5); font-size: 13.5px; }
 
-    .area-row {
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 14px;
-      margin-bottom: 8px;
-      background: rgba(255,255,255,.03);
-      overflow: hidden;
-    }
-    .area-row:last-child { margin-bottom: 0; }
-    .area-row.is-total { background: rgba(47,95,224,.08); border-color: rgba(47,95,224,.35); }
-    .area-row-top {
-      display: flex; align-items: center; gap: 10px;
-      padding: 13px 16px;
-      cursor: pointer;
-    }
-    .area-row-top:hover { background: rgba(255,255,255,.04); }
-    .area-row-top:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgba(68,114,239,.7); }
-    .area-row-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .area-row.is-total .area-row-name { font-weight: 800; }
-    .area-row-total { font-size: 13.5px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .area-row-percent { font-size: 12.5px; font-weight: 700; color: #8faaf5; min-width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
-    .area-row-chevron { flex-shrink: 0; color: rgba(255,255,255,.5); transition: transform .2s; }
-    .area-row.open .area-row-chevron { transform: rotate(180deg); }
-    .area-row-detail {
-      display: none;
-      flex-wrap: wrap; gap: 6px;
-      padding: 0 16px 14px;
-    }
-    .area-row.open .area-row-detail { display: flex; }
-
     #loadingState { text-align: center; padding: 60px 20px; color: rgba(255,255,255,.7); position: relative; z-index: 1; }
     .spinner {
       width: 44px; height: 44px;
@@ -399,12 +370,6 @@
           <div class="stat-label">Tetap pakai EDC & Optimalkan SV</div>
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Progress per Area</div>
-      <p style="font-size:12px;color:rgba(255,255,255,.6);margin:-10px 0 14px;">Tekan salah satu area untuk lihat rincian status.</p>
-      <div id="areaProgressList"></div>
     </div>
 
     <div class="card">
@@ -746,7 +711,6 @@ function tampilkanData() {
   }
 
   isiFilterAreaCabang();
-  renderTabelArea();
   render();
 
   document.getElementById('searchBox').addEventListener('input', render);
@@ -768,18 +732,6 @@ function tampilkanData() {
   document.getElementById('selectCabang').addEventListener('change', function() {
     KODE_FILTER = this.value;
     render();
-  });
-
-  document.getElementById('areaProgressList').addEventListener('click', function(ev) {
-    var top = ev.target.closest('.area-row-top');
-    if (top) toggleAreaRow(top);
-  });
-  document.getElementById('areaProgressList').addEventListener('keydown', function(ev) {
-    if (ev.key !== 'Enter' && ev.key !== ' ') return;
-    var top = ev.target.closest('.area-row-top');
-    if (!top) return;
-    ev.preventDefault();
-    toggleAreaRow(top);
   });
 
   document.getElementById('listPipeline').addEventListener('click', function(ev) {
@@ -847,77 +799,6 @@ function isiSelectCabang() {
     kodeList.map(function(k) { return '<option value="' + k + '">' + k + ' - ' + map[k] + '</option>'; }).join('');
 
   if (KODE_FILTER) cabangSel.value = KODE_FILTER;
-}
-
-// ── Progress per Area (selalu semua area, tidak terpengaruh filter) ──
-// Setiap area ditampilkan sebagai baris ringkas (Area, Total, %Progress FU)
-// yang bisa ditekan untuk expand lihat rincian status — supaya nggak perlu
-// scroll ke samping seperti tabel biasa di layar mobile.
-function renderTabelArea() {
-  // Urutan sama dengan dropdown Area (urutan kode area menaik, lihat
-  // isiFilterAreaCabang), bukan alfabetis.
-  var areas = Object.keys(DATA_CABANG);
-  var totalAgg = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0, tetapedc: 0 };
-
-  var barisArea = areas.map(function(area) {
-    var c = hitungStatusArea(area);
-    totalAgg.total     += c.total;
-    totalAgg.done      += c.done;
-    totalAgg.penawaran += c.penawaran;
-    totalAgg.menolak   += c.menolak;
-    totalAgg.tutup     += c.tutup;
-    totalAgg.mti       += c.mti;
-    totalAgg.tetapedc  += c.tetapedc;
-    return barisAreaProgress(area, c);
-  }).join('');
-
-  var totalRow = barisAreaProgress('Total', totalAgg, true);
-
-  document.getElementById('areaProgressList').innerHTML = barisArea + totalRow;
-}
-
-function toggleAreaRow(top) {
-  var row = top.closest('.area-row');
-  var isOpen = row.classList.toggle('open');
-  top.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-}
-
-function hitungStatusArea(area) {
-  var c = { total: 0, done: 0, penawaran: 0, menolak: 0, tutup: 0, mti: 0, tetapedc: 0 };
-  DATA_ALL.forEach(function(m) {
-    if (areaResmi(m) !== area) return;
-    c.total++;
-    if (m.status === 'Done Konversi to LVM') c.done++;
-    else if (m.status === 'Penawaran') c.penawaran++;
-    else if (m.status === 'Merchant Menolak') c.menolak++;
-    else if (m.status === 'Merchant Tutup') c.tutup++;
-    else if (m.status === 'Perlu Kunjungan MTI') c.mti++;
-    else if (m.status === 'Tetap pakai EDC & Optimalkan SV') c.tetapedc++;
-  });
-  return c;
-}
-
-function barisAreaProgress(label, c, isTotal) {
-  var target = c.total - c.done - c.penawaran - c.menolak - c.tutup - c.mti - c.tetapedc;
-  var persenFU = c.total ? Math.round(((c.total - target) / c.total) * 1000) / 10 : 0;
-  var ariaLabel = label + ', total ' + c.total + ' merchant, progress follow up ' + persenFU + ' persen. Tekan untuk lihat rincian status.';
-  return '' +
-    '<div class="area-row' + (isTotal ? ' is-total' : '') + '">' +
-      '<div class="area-row-top" tabindex="0" role="button" aria-expanded="false" aria-label="' + escAttr(ariaLabel) + '">' +
-        '<span class="area-row-name">' + escHtml(label) + '</span>' +
-        '<span class="area-row-total">' + formatAngka(c.total) + '</span>' +
-        '<span class="area-row-percent">' + persenFU + '%</span>' +
-        '<svg class="area-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
-      '</div>' +
-      '<div class="area-row-detail">' +
-        '<span class="badge badge-done">Done ' + formatAngka(c.done) + '</span>' +
-        '<span class="badge badge-penawaran">Penawaran ' + formatAngka(c.penawaran) + '</span>' +
-        '<span class="badge badge-menolak">Menolak ' + formatAngka(c.menolak) + '</span>' +
-        '<span class="badge badge-tutup">Tutup ' + formatAngka(c.tutup) + '</span>' +
-        '<span class="badge badge-mti">Perlu Kunjungan MTI ' + formatAngka(c.mti) + '</span>' +
-        '<span class="badge badge-tetapedc">Tetap pakai EDC & Optimalkan SV ' + formatAngka(c.tetapedc) + '</span>' +
-      '</div>' +
-    '</div>';
 }
 
 function badgeClassFor(status) {
@@ -1150,7 +1031,6 @@ function kirimUpdateStatus(params, target, statusBaru, midValue, alasanValue, si
           m.tanggalUpdate = 'Baru saja';
         }
       });
-      renderTabelArea();
       render();
       toast('Status berhasil diperbarui!');
       tampilkanWaPipeline(statusBaru, midValue, alasanValue);
