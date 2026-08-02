@@ -674,8 +674,23 @@ window.onload = function() {
   var url = APPS_SCRIPT_URL + '?action=getPipelineAll' +
     (KODE_FILTER ? '&kodeCabang=' + encodeURIComponent(KODE_FILTER) : '');
 
-  muatDataPipeline(url, 3);
+  cekMaintenanceLaluMuat(url);
 };
+
+// Cek dulu status maintenance (request ringan, gak baca sheet Pipeline yang
+// >4000 baris) sebelum muatDataPipeline yang berat. Kalau gagal ngecek
+// (network hiccup dll), tetep lanjut normal — jangan sampai user ke-block
+// gara-gara cekMaintenance doang yang gagal.
+function cekMaintenanceLaluMuat(url) {
+  fetch(APPS_SCRIPT_URL + '?action=cekMaintenance')
+    .then(function(r) { return r.text(); })
+    .then(function(teks) {
+      var res = JSON.parse(teks);
+      if (res.maintenance) { window.location.href = 'maintenance.html'; return; }
+      muatDataPipeline(url, 3);
+    })
+    .catch(function() { muatDataPipeline(url, 3); });
+}
 
 // Sheet "Pipeline EDC to LVM" berisi ribuan baris, jadi setiap request
 // butuh beberapa detik untuk di-scan Apps Script — sesekali Google
@@ -700,6 +715,7 @@ function muatDataPipeline(url, sisaPercobaan) {
       } catch (e) {
         throw new Error('respons bukan JSON (server sedang sibuk)');
       }
+      if (res.maintenance) { window.location.href = 'maintenance.html'; return; }
       if (res.error) { tampilkanError(res.error); return; }
       DATA_ALL = res.data || [];
       tampilkanData();
@@ -1099,6 +1115,11 @@ function kirimUpdateStatus(params, target, statusBaru, midValue, alasanValue, si
 
       btn.disabled = false;
       btn.textContent = 'Simpan';
+      if (res.maintenance) {
+        errBox.textContent = 'Sistem sedang dalam pemeliharaan data, coba lagi nanti.';
+        errBox.classList.add('show');
+        return;
+      }
       if (!res.success) {
         errBox.textContent = res.error || 'Gagal menyimpan. Coba lagi.';
         errBox.classList.add('show');
