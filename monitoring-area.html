@@ -59,12 +59,13 @@
     .btn-wa:hover { background: rgba(37,211,102,.24); }
     .btn-wa:disabled { opacity: .5; cursor: not-allowed; }
 
+    .wa-area-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .btn-wa-area {
-      display: inline-flex; align-items: center; justify-content: center;
-      margin-left: 8px; padding: 3px 9px; border-radius: 999px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 7px 14px; border-radius: 999px;
       border: 1px solid rgba(37,211,102,.35); background: rgba(37,211,102,.12);
-      color: #5ee08a; font-size: 10.5px; font-weight: 700; font-family: inherit;
-      cursor: pointer; vertical-align: middle;
+      color: #5ee08a; font-size: 11.5px; font-weight: 700; font-family: inherit;
+      cursor: pointer; white-space: nowrap;
     }
     .btn-wa-area:hover { background: rgba(37,211,102,.22); }
     .btn-wa-area:disabled { opacity: .5; cursor: not-allowed; }
@@ -179,6 +180,8 @@
         <button class="btn-refresh" id="btnRefresh" type="button">↻ Refresh</button>
       </div>
     </div>
+
+    <div class="wa-area-row" id="waAreaRow"></div>
 
     <div class="table-card">
       <div class="table-scroll">
@@ -333,8 +336,7 @@ function baris(r, isTotal) {
 function barisArea(r, idx) {
   var tds = '<td class="col-area">'
     + '<span class="expand-icon">▶</span>' + r.area
-    + '<span class="jml-cabang"> (' + r.cabang.length + ' cabang)</span>'
-    + '<button class="btn-wa-area" type="button" onclick="kirimLaporanArea(event, \'' + r.area.replace(/'/g, "\\'") + '\')">📤 Kirim</button></td>'
+    + '<span class="jml-cabang"> (' + r.cabang.length + ' cabang)</span></td>'
     + '<td>' + formatAngka(r.jumlahLeads) + '</td>' + selMetrik(r);
   var baris1 = '<tr class="row-area" data-idx="' + idx + '" onclick="toggleArea(' + idx + ')">' + tds + '</tr>';
   var baris2 = '<tr class="row-cabang-wrap" id="wrapArea' + idx + '">'
@@ -412,6 +414,16 @@ function tampilkanRingkasan(res) {
   var html = res.area.map(function(r, idx) { return barisArea(r, idx); }).join('');
   html += baris(res.total, true);
   document.getElementById('tbodyArea').innerHTML = html;
+
+  var waHtml = res.area.map(function(r) {
+    return '<button class="btn-wa-area" type="button" onclick="kirimLaporanArea(event, \'' + r.area.replace(/'/g, "\\'") + '\')">📤 Kirim ' + labelAreaSingkatHtml(r.area) + '</button>';
+  }).join('');
+  document.getElementById('waAreaRow').innerHTML = waHtml;
+}
+
+// "Area Manado" -> "Manado" (buat label tombol biar ringkas)
+function labelAreaSingkatHtml(area) {
+  return String(area || '').replace(/^Area\s+/, '');
 }
 
 function tampilkanError(msg) {
