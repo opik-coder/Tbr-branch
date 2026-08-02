@@ -50,6 +50,25 @@
     .btn-refresh:hover { background: rgba(255,255,255,.12); }
     .btn-refresh:disabled { opacity: .5; cursor: not-allowed; }
 
+    .toolbar-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-wa {
+      padding: 9px 18px; border-radius: 999px; border: 1px solid rgba(37,211,102,.4);
+      background: rgba(37,211,102,.14); color: #5ee08a; font-size: 12.5px; font-weight: 700;
+      font-family: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .btn-wa:hover { background: rgba(37,211,102,.24); }
+    .btn-wa:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-wa-area {
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-left: 8px; padding: 3px 9px; border-radius: 999px;
+      border: 1px solid rgba(37,211,102,.35); background: rgba(37,211,102,.12);
+      color: #5ee08a; font-size: 10.5px; font-weight: 700; font-family: inherit;
+      cursor: pointer; vertical-align: middle;
+    }
+    .btn-wa-area:hover { background: rgba(37,211,102,.22); }
+    .btn-wa-area:disabled { opacity: .5; cursor: not-allowed; }
+
     .table-card {
       background: rgba(255,255,255,.035);
       backdrop-filter: blur(10px);
@@ -155,7 +174,10 @@
   <div id="kontenRingkasan" style="display:none;">
     <div class="toolbar">
       <div class="updated-info" id="updatedInfo">Terakhir diperbarui: -</div>
-      <button class="btn-refresh" id="btnRefresh" type="button">↻ Refresh</button>
+      <div class="toolbar-actions">
+        <button class="btn-wa" id="btnKirimRegion" type="button" onclick="kirimLaporanRegion()">📤 Kirim Laporan Region</button>
+        <button class="btn-refresh" id="btnRefresh" type="button">↻ Refresh</button>
+      </div>
     </div>
 
     <div class="table-card">
@@ -189,6 +211,7 @@
 
     <div class="legend">
       <div>💡 Klik baris Area untuk menampilkan rincian per Cabang di dalamnya.</div>
+      <div>📤 Tombol <b>Kirim Laporan</b> menyiapkan teks laporan (Region atau per Area) lalu membuka WhatsApp tanpa nomor tujuan tertentu — silakan pilih sendiri kontak/grup yang dituju.</div>
       <div><b>Jumlah Leads</b> merupakan jumlah baris merchant pada sheet Pipeline apa adanya, termasuk merchant yang sudah Shifting to Optimal.</div>
       <div><b>Sisa Leads</b> dihitung dari Jml FU dikurangi Jumlah Leads (nilai negatif menunjukkan masih terdapat leads berstatus "Target" yang belum ditindaklanjuti).</div>
       <div><b>Progress DtD</b> merupakan pertambahan Jml FU dibandingkan snapshot hari sebelumnya (Day to Day), dihitung per Cabang kemudian dijumlahkan ke tingkat Area.</div>
@@ -310,12 +333,52 @@ function baris(r, isTotal) {
 function barisArea(r, idx) {
   var tds = '<td class="col-area">'
     + '<span class="expand-icon">▶</span>' + r.area
-    + '<span class="jml-cabang"> (' + r.cabang.length + ' cabang)</span></td>'
+    + '<span class="jml-cabang"> (' + r.cabang.length + ' cabang)</span>'
+    + '<button class="btn-wa-area" type="button" onclick="kirimLaporanArea(event, \'' + r.area.replace(/'/g, "\\'") + '\')">📤 Kirim</button></td>'
     + '<td>' + formatAngka(r.jumlahLeads) + '</td>' + selMetrik(r);
   var baris1 = '<tr class="row-area" data-idx="' + idx + '" onclick="toggleArea(' + idx + ')">' + tds + '</tr>';
   var baris2 = '<tr class="row-cabang-wrap" id="wrapArea' + idx + '">'
     + '<td colspan="13">' + buatSubtableCabang(r.cabang) + '</td></tr>';
   return baris1 + baris2;
+}
+
+// Buka wa.me/?text=... TANPA nomor tujuan, jadi user pilih sendiri kontak/
+// grup WA yang mau dikirimin (WhatsApp tidak bisa deep-link langsung ke grup).
+function bukaWhatsApp(teks) {
+  window.open('https://wa.me/?text=' + encodeURIComponent(teks), '_blank');
+}
+
+function kirimLaporanRegion() {
+  var btn = document.getElementById('btnKirimRegion');
+  btn.disabled = true;
+  var teksAsal = btn.textContent;
+  btn.textContent = 'Menyiapkan...';
+  fetch(APPS_SCRIPT_URL + '?action=getWaLaporanRegion')
+    .then(function(r) { return r.text(); })
+    .then(function(teks) {
+      var res = JSON.parse(teks);
+      if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); return; }
+      bukaWhatsApp(res.teks);
+    })
+    .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); })
+    .finally(function() { btn.disabled = false; btn.textContent = teksAsal; });
+}
+
+function kirimLaporanArea(ev, namaArea) {
+  ev.stopPropagation(); // biar klik tombol tidak ikut buka/tutup baris Area
+  var btn = ev.currentTarget;
+  btn.disabled = true;
+  var teksAsal = btn.textContent;
+  btn.textContent = '...';
+  fetch(APPS_SCRIPT_URL + '?action=getWaLaporanArea&area=' + encodeURIComponent(namaArea))
+    .then(function(r) { return r.text(); })
+    .then(function(teks) {
+      var res = JSON.parse(teks);
+      if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); return; }
+      bukaWhatsApp(res.teks);
+    })
+    .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); })
+    .finally(function() { btn.disabled = false; btn.textContent = teksAsal; });
 }
 
 function buatSubtableCabang(daftar) {
