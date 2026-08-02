@@ -217,13 +217,28 @@ var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl4SiO8CeyYrF4vD
 // ================================================================
 
 window.onload = function() {
-  muatRingkasan(3);
+  cekMaintenanceLaluMuat();
   document.getElementById('btnRefresh').addEventListener('click', function() {
     document.getElementById('btnRefresh').disabled = true;
     document.getElementById('btnRefresh').textContent = '↻ Memuat...';
     muatRingkasan(2);
   });
 };
+
+// Cek dulu status maintenance (request ringan, gak baca sheet Pipeline sama
+// sekali) sebelum manggil getRingkasanArea yang berat. Kalau gagal ngecek
+// (network hiccup dll), tetep lanjut normal — jangan sampai user ke-block
+// gara-gara cekMaintenance doang yang gagal.
+function cekMaintenanceLaluMuat() {
+  fetch(APPS_SCRIPT_URL + '?action=cekMaintenance')
+    .then(function(r) { return r.text(); })
+    .then(function(teks) {
+      var res = JSON.parse(teks);
+      if (res.maintenance) { window.location.href = 'maintenance.html'; return; }
+      muatRingkasan(3);
+    })
+    .catch(function() { muatRingkasan(3); });
+}
 
 // Sheet Pipeline berisi ribuan baris, jadi request bisa sesekali dibalas
 // halaman HTML (bukan JSON) kalau Apps Script lagi sibuk — coba ulang
@@ -235,6 +250,7 @@ function muatRingkasan(sisaPercobaan) {
       var res;
       try { res = JSON.parse(teks); }
       catch (e) { throw new Error('respons bukan JSON (server sedang sibuk)'); }
+      if (res.maintenance) { window.location.href = 'maintenance.html'; return; }
       if (res.error) { tampilkanError(res.error); return; }
       tampilkanRingkasan(res);
     })
