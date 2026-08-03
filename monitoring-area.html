@@ -363,8 +363,65 @@ function barisArea(r, idx) {
 
 // Buka wa.me/?text=... TANPA nomor tujuan, jadi user pilih sendiri kontak/
 // grup WA yang mau dikirimin (WhatsApp tidak bisa deep-link langsung ke grup).
-function bukaWhatsApp(teks) {
-  window.open('https://wa.me/?text=' + encodeURIComponent(teks), '_blank');
+// Kalau winTujuan dikasih (tab yang sudah disiapkan dari awal klik), pakai
+// itu (biar gak ke-block popup blocker) — kalau nggak, baru window.open baru.
+function bukaWhatsApp(teks, winTujuan) {
+  var url = 'https://wa.me/?text=' + encodeURIComponent(teks);
+  if (winTujuan && !winTujuan.closed) { winTujuan.location = url; }
+  else { window.open(url, '_blank'); }
+}
+
+// Cek apakah browser ini dukung Web Share API buat kirim FILE (gambar) +
+// teks sekaligus dalam SATU aksi (share sheet native HP/desktop, user
+// tinggal pilih WhatsApp). Kalau nggak dukung, dipakai cara lama: download
+// gambar + buka wa.me teks doang (attach manual).
+function _bisaShareFile() {
+  try {
+    if (!navigator.share || !navigator.canShare) return false;
+    var dummy = new File([''], 'x.png', { type: 'image/png' });
+    return navigator.canShare({ files: [dummy] });
+  } catch (e) { return false; }
+}
+
+function _unduhBlob(blob, namaFile) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = namaFile;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+}
+
+// CSS khusus tabel di gambar screenshot: versi LIGHT (putih/terang), beda
+// dari tabel asli di halaman yang gelap. Semua selector di-scope di bawah
+// .shot-light biar gak nyenggol tampilan tabel asli yang lagi kelihatan di
+// layar. Posisi "sticky" juga dipaksa jadi "static" di sini — html2canvas
+// nggak nangkep position:sticky dengan bener (col Area suka acak-acakan
+// posisinya kalau dibiarin sticky pas di-screenshot).
+function _cssScreenshotLight() {
+  return ''
+    + '.shot-light table { background:#ffffff; }'
+    + '.shot-light th, .shot-light td { position:static !important; left:auto !important; top:auto !important; border-bottom:1px solid #e3e7f3 !important; color:#1b2340; }'
+    + '.shot-light thead th { background:#eef1fb !important; color:#1b2340 !important; border-bottom:1px solid #d7def3 !important; }'
+    + '.shot-light thead tr.grp th { background:#e4e9fb !important; color:#41507a !important; }'
+    + '.shot-light thead tr.grp th.grp-fu { background:#d7e0fb !important; color:#2f4aa8 !important; }'
+    + '.shot-light thead tr.grp th.grp-hasil { background:#c7d5fa !important; color:#22398f !important; }'
+    + '.shot-light thead tr.grp th.grp-dtd { background:#dcfce7 !important; color:#15803d !important; }'
+    + '.shot-light td.col-area { background:#f6f8ff !important; color:#0f1730 !important; font-weight:700; text-align:left; }'
+    + '.shot-light tr.row-total td { background:#dbe4fb !important; color:#0f1730 !important; font-weight:800; }'
+    + '.shot-light .num-neg { color:#dc2626 !important; }'
+    + '.shot-light .num-pos { color:#16a34a !important; }'
+    + '.shot-light .pill-fu { color:#1b2340 !important; font-weight:700; }'
+    + '.shot-light .dtd-up { color:#16a34a !important; font-weight:800; }'
+    + '.shot-light .dtd-down { color:#dc2626 !important; font-weight:800; }'
+    + '.shot-light .dtd-flat { color:#6b7280 !important; font-weight:700; }'
+    + '.shot-light table.subtable th { background:#eef1fb !important; color:#41507a !important; }'
+    + '.shot-light table.subtable td { color:#1b2340; border-bottom:1px solid #edf0f9 !important; }'
+    + '.shot-light table.subtable td.col-cabang { background:transparent !important; }'
+    + '.shot-light .kode-cabang { color:#8892b0 !important; }'
+    + '.shot-light .jml-cabang { color:#6b7280 !important; }';
 }
 
 // Simpan hasil getRingkasanArea terakhir yang berhasil dimuat, dipakai buat
@@ -400,49 +457,71 @@ function _htmlTabelUntukScreenshot(res, namaAreaFilter) {
   return '<table>' + theadHtml + '<tbody>' + bodyHtml + '</tbody></table>';
 }
 
-// Bikin gambar PNG dari tabel (via html2canvas), auto-download, BARU buka
-// WhatsApp dengan teks wording-nya. WhatsApp (wa.me) TIDAK BISA nerima
-// gambar+teks sekaligus lewat link — ini keterbatasan dari WhatsApp
-// sendiri, bukan soal kode — jadi gambarnya di-download dulu, tinggal
-// di-attach manual sebelum kirim (dikasih instruksi lewat alert).
-function unduhScreenshotDanBuka(namaAreaFilter, judul, namaFile, teksWA) {
+// Bikin gambar PNG dari tabel (via html2canvas, versi LIGHT), lalu kirim
+// bareng wording-nya ke WhatsApp.
+//   - Kalau browser dukung Web Share API buat file (kebanyakan HP, & makin
+//     banyak browser desktop) -> gambar+teks langsung kekirim SEKALIGUS
+//     lewat native share sheet, user tinggal pilih WhatsApp. Selesai, gak
+//     perlu attach manual.
+//   - Kalau nggak dukung -> fallback: gambar di-download otomatis + wa.me
+//     teks kebuka di tab yang sudah disiapkan dari awal klik (biar gak
+//     ke-block popup blocker), tinggal attach manual gambarnya sebelum
+//     kirim (ini keterbatasan wa.me sendiri, bukan soal kode).
+function unduhScreenshotDanBuka(namaAreaFilter, judul, namaFile, teksWA, waWin) {
   if (!LAST_RES) {
     alert('Data belum termuat, refresh dulu halamannya sebelum kirim laporan.');
+    if (waWin && !waWin.closed) waWin.close();
     return;
   }
   var tabelHtml = _htmlTabelUntukScreenshot(LAST_RES, namaAreaFilter);
   if (!tabelHtml) {
     alert('Area tidak ditemukan, gagal bikin gambar. Teks tetap dikirim tanpa gambar.');
-    bukaWhatsApp(teksWA);
+    bukaWhatsApp(teksWA, waWin);
     return;
   }
 
   var wrap = document.createElement('div');
+  wrap.className = 'shot-light';
   wrap.style.cssText = 'position:fixed;left:-99999px;top:0;display:inline-block;'
-    + 'padding:24px;background:#0a0f24;color:#fff;'
+    + 'padding:24px;background:#ffffff;color:#1b2340;'
     + "font-family:'Plus Jakarta Sans',Arial,sans-serif;";
   wrap.innerHTML = ''
+    + '<style>' + _cssScreenshotLight() + '</style>'
     + '<div style="text-align:center;margin-bottom:16px;">'
-    + '<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.5);">TBRX Report &middot; Region X / Sulawesi &amp; Maluku</div>'
-    + '<div style="font-family:Georgia,serif;font-weight:800;font-size:22px;margin-top:4px;color:#fff;">' + judul + '</div>'
-    + '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px;">Diperbarui: ' + (LAST_RES.diperbarui || '-') + '</div>'
+    + '<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#5b6b98;">TBRX Report &middot; Region X / Sulawesi &amp; Maluku</div>'
+    + '<div style="font-family:Georgia,serif;font-weight:800;font-size:22px;margin-top:4px;color:#0f1730;">' + judul + '</div>'
+    + '<div style="font-size:12px;color:#6b7280;margin-top:4px;">Diperbarui: ' + (LAST_RES.diperbarui || '-') + '</div>'
     + '</div>'
     + tabelHtml;
   document.body.appendChild(wrap);
 
-  html2canvas(wrap, { backgroundColor: '#0a0f24', scale: 2 }).then(function (canvas) {
+  html2canvas(wrap, { backgroundColor: '#ffffff', scale: 2 }).then(function (canvas) {
     document.body.removeChild(wrap);
     canvas.toBlob(function (blob) {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = namaFile;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+      if (!blob) {
+        alert('Gagal bikin gambar tabel. Teks tetap dikirim tanpa gambar.');
+        bukaWhatsApp(teksWA, waWin);
+        return;
+      }
 
-      bukaWhatsApp(teksWA);
+      if (_bisaShareFile()) {
+        if (waWin && !waWin.closed) waWin.close(); // gak jadi dipakai
+        var file = new File([blob], namaFile, { type: 'image/png' });
+        navigator.share({ files: [file], text: teksWA, title: judul })
+          .catch(function (err) {
+            // User batal milih share target (AbortError) -> diemin aja.
+            if (err && err.name !== 'AbortError') {
+              _unduhBlob(blob, namaFile);
+              bukaWhatsApp(teksWA);
+              alert('Share otomatis gagal (' + err.message + '). Gambar tetap ke-download, lampirkan manual ya.');
+            }
+          });
+        return;
+      }
+
+      // Fallback: browser gak dukung native share file.
+      _unduhBlob(blob, namaFile);
+      bukaWhatsApp(teksWA, waWin);
       setTimeout(function () {
         alert('📥 Gambar tabel sudah otomatis ke-download.\n\nDi jendela WhatsApp yang baru kebuka, klik ikon 📎 lalu lampirkan gambar yang baru ke-download itu sebelum kirim (WhatsApp tidak bisa nerima gambar+teks sekaligus lewat link).');
       }, 400);
@@ -450,7 +529,7 @@ function unduhScreenshotDanBuka(namaAreaFilter, judul, namaFile, teksWA) {
   }).catch(function (err) {
     if (wrap.parentNode) document.body.removeChild(wrap);
     alert('Gagal bikin gambar tabel: ' + err.message + '. Teks tetap dikirim tanpa gambar.');
-    bukaWhatsApp(teksWA);
+    bukaWhatsApp(teksWA, waWin);
   });
 }
 
@@ -460,19 +539,33 @@ function _namaFileTanggal() {
   return p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear();
 }
 
+// Siapin tab WhatsApp dari AWAL klik tombol (masih dianggap aksi user
+// langsung sama browser), biar gak ke-block popup blocker pas dipakai
+// belakangan sesudah fetch + proses screenshot yang makan waktu. Kalau
+// browser dukung native share file, tab ini gak jadi dipakai & ditutup lagi.
+function _siapkanTabWa() {
+  if (_bisaShareFile()) return null;
+  var w = window.open('', '_blank');
+  if (w) {
+    try { w.document.write('<title>Menyiapkan laporan…</title><body style="font-family:sans-serif;padding:40px;color:#555">Menyiapkan laporan, tunggu sebentar…</body>'); } catch (e) {}
+  }
+  return w;
+}
+
 function kirimLaporanRegion() {
   var btn = document.getElementById('btnKirimRegion');
   btn.disabled = true;
   var teksAsal = btn.textContent;
   btn.textContent = 'Menyiapkan...';
+  var waWin = _siapkanTabWa();
   fetch(_urlNoCache(APPS_SCRIPT_URL + '?action=getWaLaporanRegion'), { cache: 'no-store' })
     .then(function(r) { return r.text(); })
     .then(function(teks) {
       var res = JSON.parse(teks);
-      if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); return; }
-      unduhScreenshotDanBuka(null, 'Progress FU Optimalisasi Merchant — Region X', 'Laporan_Region_' + _namaFileTanggal() + '.png', res.teks);
+      if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); if (waWin && !waWin.closed) waWin.close(); return; }
+      unduhScreenshotDanBuka(null, 'Progress FU Optimalisasi Merchant — Region X', 'Laporan_Region_' + _namaFileTanggal() + '.png', res.teks, waWin);
     })
-    .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); })
+    .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); if (waWin && !waWin.closed) waWin.close(); })
     .finally(function() { btn.disabled = false; btn.textContent = teksAsal; });
 }
 
@@ -482,14 +575,15 @@ function kirimLaporanArea(ev, namaArea) {
   btn.disabled = true;
   var teksAsal = btn.textContent;
   btn.textContent = '...';
+  var waWin = _siapkanTabWa();
   fetch(_urlNoCache(APPS_SCRIPT_URL + '?action=getWaLaporanArea&area=' + encodeURIComponent(namaArea)), { cache: 'no-store' })
     .then(function(r) { return r.text(); })
     .then(function(teks) {
       var res = JSON.parse(teks);
-      if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); return; }
-      unduhScreenshotDanBuka(namaArea, 'Progress FU Optimalisasi Merchant — ' + namaArea, 'Laporan_' + labelAreaSingkatHtml(namaArea).replace(/\s+/g, '_') + '_' + _namaFileTanggal() + '.png', res.teks);
+      if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); if (waWin && !waWin.closed) waWin.close(); return; }
+      unduhScreenshotDanBuka(namaArea, 'Progress FU Optimalisasi Merchant — ' + namaArea, 'Laporan_' + labelAreaSingkatHtml(namaArea).replace(/\s+/g, '_') + '_' + _namaFileTanggal() + '.png', res.teks, waWin);
     })
-    .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); })
+    .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); if (waWin && !waWin.closed) waWin.close(); })
     .finally(function() { btn.disabled = false; btn.textContent = teksAsal; });
 }
 
