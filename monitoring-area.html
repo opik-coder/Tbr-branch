@@ -504,17 +504,31 @@ function unduhScreenshotDanBuka(namaAreaFilter, judul, namaFile, teksWA, waWin) 
         return;
       }
 
+      // Catatan: waWin SENGAJA belum ditutup di sini — baru ditutup kalau
+      // native share beneran berhasil / dibatalkan sendiri sama user. Kalau
+      // native share ditolak sama browser (mis. iOS Safari suka nolak kalau
+      // prosesnya kelamaan dari klik awal — errornya "not allowed by user
+      // agent"), waWin masih ada buat dipakai fallback manual, jadi WA-nya
+      // tetap kebuka + gambar tetap ke-download, gak hilang begitu aja.
       if (_bisaShareFile()) {
-        if (waWin && !waWin.closed) waWin.close(); // gak jadi dipakai
         var file = new File([blob], namaFile, { type: 'image/png' });
         navigator.share({ files: [file], text: teksWA, title: judul })
+          .then(function () {
+            if (waWin && !waWin.closed) waWin.close(); // berhasil, gak jadi dipakai
+          })
           .catch(function (err) {
-            // User batal milih share target (AbortError) -> diemin aja.
-            if (err && err.name !== 'AbortError') {
-              _unduhBlob(blob, namaFile);
-              bukaWhatsApp(teksWA);
-              alert('Share otomatis gagal (' + err.message + '). Gambar tetap ke-download, lampirkan manual ya.');
+            if (err && err.name === 'AbortError') {
+              // User sengaja batal di share sheet -> hormati, gak usah fallback.
+              if (waWin && !waWin.closed) waWin.close();
+              return;
             }
+            // Share otomatis gak bisa jalan di kondisi ini -> fallback ke
+            // cara manual (download + WA teks), tanpa bikin panik user.
+            _unduhBlob(blob, namaFile);
+            bukaWhatsApp(teksWA, waWin);
+            setTimeout(function () {
+              alert('📥 Gambar tabel sudah otomatis ke-download.\n\nDi jendela WhatsApp yang baru kebuka, klik ikon 📎 lalu lampirkan gambar yang baru ke-download itu sebelum kirim (WhatsApp tidak bisa nerima gambar+teks sekaligus lewat link).');
+            }, 400);
           });
         return;
       }
