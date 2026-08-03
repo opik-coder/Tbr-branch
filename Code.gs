@@ -292,6 +292,7 @@ function cariLaporan(idLaporan) {
 function susunTeksWA(tanggal, area, cabang, kode, lvm, edc, edcPot, total, plasLVM, retEDC, leadsCakra, kunjunganCakra, gapCakra, livinFood, namaMerchant, updatesEDCLVM, kendala, keterangan) {
   var t = '';
   t += 'Mohon izin melaporkan hasil akuisisi harian:\n\n';
+  t += '```\n';
   t += 'Tanggal : ' + tanggal + '\n';
   t += 'Area    : ' + area + '\n';
   t += 'Cabang  : ' + cabang + '\n';
@@ -328,7 +329,8 @@ function susunTeksWA(tanggal, area, cabang, kode, lvm, edc, edcPot, total, plasL
     t += '\n';
   }
   t += 'Kendala    : ' + kendala + '\n';
-  t += 'Keterangan : ' + keterangan + '\n\n';
+  t += 'Keterangan : ' + keterangan + '\n';
+  t += '```\n\n';
   t += 'Terima kasih.';
   return t;
 }
