@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitoring Progress Area — TBRX Report</title>
+  <title>Monitoring Progress Area — RTF Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <!-- html2canvas: buat "screenshot" tabel Region/Area jadi gambar PNG pas
+       tombol Kirim Laporan diklik (dipakai bareng wording WA). -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -154,7 +157,7 @@
   <div class="topbar-brand">
     <span class="topbar-badge">R10</span>
     <div>
-      <div class="topbar-title">TBRX Report</div>
+      <div class="topbar-title">RTF Report</div>
       <div class="topbar-sub">Region X · Sulawesi &amp; Maluku</div>
     </div>
   </div>
@@ -214,7 +217,7 @@
 
     <div class="legend">
       <div>💡 Klik baris Area untuk menampilkan rincian per Cabang di dalamnya.</div>
-      <div>📤 Tombol <b>Kirim Laporan</b> menyiapkan teks laporan (Region atau per Area) lalu membuka WhatsApp tanpa nomor tujuan tertentu — silakan pilih sendiri kontak/grup yang dituju.</div>
+      <div>📤 Tombol <b>Kirim Laporan</b> menyiapkan teks laporan (Region atau per Area) + otomatis mengunduh gambar tabelnya, lalu membuka WhatsApp tanpa nomor tujuan tertentu — silakan lampirkan gambar yang terunduh secara manual sebelum kirim (WhatsApp tidak bisa menerima gambar dan teks sekaligus lewat link), dan pilih sendiri kontak/grup yang dituju.</div>
       <div><b>Jumlah Leads</b> merupakan jumlah baris merchant pada sheet Pipeline apa adanya, termasuk merchant yang sudah Shifting to Optimal.</div>
       <div><b>Sisa Leads</b> dihitung dari Jml FU dikurangi Jumlah Leads (nilai negatif menunjukkan masih terdapat leads berstatus "Target" yang belum ditindaklanjuti).</div>
       <div><b>Progress DtD</b> merupakan pertambahan Jml FU dibandingkan snapshot hari sebelumnya (Day to Day), dihitung per Cabang kemudian dijumlahkan ke tingkat Area.</div>
@@ -229,8 +232,8 @@
   </div>
 
   <div class="footer">
-    Monitoring Progress Pipeline · TBRX Team<br>
-    <span>Copyright &copy; 2026 TBRX Team</span>
+    Monitoring Progress Pipeline · RTF Team<br>
+    <span>Copyright &copy; 2026 RTF Team</span>
   </div>
 </div>
 
@@ -363,6 +366,99 @@ function bukaWhatsApp(teks) {
   window.open('https://wa.me/?text=' + encodeURIComponent(teks), '_blank');
 }
 
+// Simpan hasil getRingkasanArea terakhir yang berhasil dimuat, dipakai buat
+// bikin gambar screenshot tabel (Region/Area) tanpa perlu fetch ulang.
+var LAST_RES = null;
+
+// Susun HTML tabel STANDALONE (headers + isi) khusus buat di-screenshot —
+// SENGAJA dibangun ulang dari data (bukan nyomot tabel yang lagi tampil di
+// halaman), supaya hasilnya predictable & gak kepengaruh baris mana yang
+// lagi di-expand/di-collapse user pas tombol Kirim diklik.
+//   - namaAreaFilter kosong -> tabel semua Area (collapsed) + baris Total.
+//   - namaAreaFilter diisi  -> cuma baris Area itu + rincian per Cabang-nya
+//     (dipaksa "terbuka", biar kelihatan detailnya di gambar).
+function _htmlTabelUntukScreenshot(res, namaAreaFilter) {
+  var theadHtml = document.querySelector('.table-card table thead').outerHTML;
+  var bodyHtml;
+  if (namaAreaFilter) {
+    var area = res.area.filter(function (a) { return a.area === namaAreaFilter; })[0];
+    if (!area) return null;
+    var tds = '<td class="col-area">' + area.area
+      + '<span class="jml-cabang"> (' + area.cabang.length + ' cabang)</span></td>'
+      + '<td>' + formatAngka(area.jumlahLeads) + '</td>' + selMetrik(area);
+    bodyHtml = '<tr>' + tds + '</tr>'
+      + '<tr><td colspan="13" style="padding:0;">' + buatSubtableCabang(area.cabang) + '</td></tr>';
+  } else {
+    bodyHtml = res.area.map(function (r) {
+      var t = '<td class="col-area">' + r.area
+        + '<span class="jml-cabang"> (' + r.cabang.length + ' cabang)</span></td>'
+        + '<td>' + formatAngka(r.jumlahLeads) + '</td>' + selMetrik(r);
+      return '<tr>' + t + '</tr>';
+    }).join('') + baris(res.total, true);
+  }
+  return '<table>' + theadHtml + '<tbody>' + bodyHtml + '</tbody></table>';
+}
+
+// Bikin gambar PNG dari tabel (via html2canvas), auto-download, BARU buka
+// WhatsApp dengan teks wording-nya. WhatsApp (wa.me) TIDAK BISA nerima
+// gambar+teks sekaligus lewat link — ini keterbatasan dari WhatsApp
+// sendiri, bukan soal kode — jadi gambarnya di-download dulu, tinggal
+// di-attach manual sebelum kirim (dikasih instruksi lewat alert).
+function unduhScreenshotDanBuka(namaAreaFilter, judul, namaFile, teksWA) {
+  if (!LAST_RES) {
+    alert('Data belum termuat, refresh dulu halamannya sebelum kirim laporan.');
+    return;
+  }
+  var tabelHtml = _htmlTabelUntukScreenshot(LAST_RES, namaAreaFilter);
+  if (!tabelHtml) {
+    alert('Area tidak ditemukan, gagal bikin gambar. Teks tetap dikirim tanpa gambar.');
+    bukaWhatsApp(teksWA);
+    return;
+  }
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;left:-99999px;top:0;display:inline-block;'
+    + 'padding:24px;background:#0a0f24;color:#fff;'
+    + "font-family:'Plus Jakarta Sans',Arial,sans-serif;";
+  wrap.innerHTML = ''
+    + '<div style="text-align:center;margin-bottom:16px;">'
+    + '<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.5);">RTF Report &middot; Region X / Sulawesi &amp; Maluku</div>'
+    + '<div style="font-family:Georgia,serif;font-weight:800;font-size:22px;margin-top:4px;color:#fff;">' + judul + '</div>'
+    + '<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px;">Diperbarui: ' + (LAST_RES.diperbarui || '-') + '</div>'
+    + '</div>'
+    + tabelHtml;
+  document.body.appendChild(wrap);
+
+  html2canvas(wrap, { backgroundColor: '#0a0f24', scale: 2 }).then(function (canvas) {
+    document.body.removeChild(wrap);
+    canvas.toBlob(function (blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = namaFile;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+
+      bukaWhatsApp(teksWA);
+      setTimeout(function () {
+        alert('📥 Gambar tabel sudah otomatis ke-download.\n\nDi jendela WhatsApp yang baru kebuka, klik ikon 📎 lalu lampirkan gambar yang baru ke-download itu sebelum kirim (WhatsApp tidak bisa nerima gambar+teks sekaligus lewat link).');
+      }, 400);
+    }, 'image/png');
+  }).catch(function (err) {
+    if (wrap.parentNode) document.body.removeChild(wrap);
+    alert('Gagal bikin gambar tabel: ' + err.message + '. Teks tetap dikirim tanpa gambar.');
+    bukaWhatsApp(teksWA);
+  });
+}
+
+function _namaFileTanggal() {
+  var d = new Date();
+  var p = function (n) { return (n < 10 ? '0' : '') + n; };
+  return p(d.getDate()) + '-' + p(d.getMonth() + 1) + '-' + d.getFullYear();
+}
+
 function kirimLaporanRegion() {
   var btn = document.getElementById('btnKirimRegion');
   btn.disabled = true;
@@ -373,7 +469,7 @@ function kirimLaporanRegion() {
     .then(function(teks) {
       var res = JSON.parse(teks);
       if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); return; }
-      bukaWhatsApp(res.teks);
+      unduhScreenshotDanBuka(null, 'Progress FU Optimalisasi Merchant — Region X', 'Laporan_Region_' + _namaFileTanggal() + '.png', res.teks);
     })
     .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); })
     .finally(function() { btn.disabled = false; btn.textContent = teksAsal; });
@@ -390,7 +486,7 @@ function kirimLaporanArea(ev, namaArea) {
     .then(function(teks) {
       var res = JSON.parse(teks);
       if (res.error) { alert('Gagal menyiapkan laporan: ' + res.error); return; }
-      bukaWhatsApp(res.teks);
+      unduhScreenshotDanBuka(namaArea, 'Progress FU Optimalisasi Merchant — ' + namaArea, 'Laporan_' + labelAreaSingkatHtml(namaArea).replace(/\s+/g, '_') + '_' + _namaFileTanggal() + '.png', res.teks);
     })
     .catch(function(err) { alert('Gagal menyiapkan laporan: ' + err.message); })
     .finally(function() { btn.disabled = false; btn.textContent = teksAsal; });
@@ -416,6 +512,7 @@ function toggleArea(idx) {
 }
 
 function tampilkanRingkasan(res) {
+  LAST_RES = res; // dipakai unduhScreenshotDanBuka() buat bikin gambar tabel
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('errorState').style.display = 'none';
   document.getElementById('kontenRingkasan').style.display = 'block';
