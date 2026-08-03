@@ -149,6 +149,43 @@
     .legend { margin-top: 14px; font-size: 11.5px; color: rgba(255,255,255,.45); line-height: 1.7; }
     .legend b { color: rgba(255,255,255,.7); }
 
+    /* Modal "Laporan siap dikirim" — tombol Kirim di sini yang men-trigger
+       navigator.share() supaya statusnya masih dianggap tap user LANGSUNG
+       (bukan dari promise chain fetch/html2canvas sebelumnya), soalnya
+       browser strict kayak iOS Safari cuma ngizinin share kalau dipicu
+       persis pas user nge-tap, bukan belakangan. */
+    .share-modal-overlay {
+      position: fixed; inset: 0; background: rgba(2,5,16,.72);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; z-index: 999;
+    }
+    .share-modal-card {
+      width: 100%; max-width: 340px; text-align: center;
+      background: #131c3f; border: 1px solid rgba(255,255,255,.1);
+      border-radius: 18px; padding: 20px 20px 22px;
+      box-shadow: 0 24px 60px -20px rgba(0,0,0,.7);
+    }
+    .share-modal-preview {
+      width: 100%; max-height: 220px; object-fit: contain; object-position: top;
+      border-radius: 10px; border: 1px solid rgba(255,255,255,.1); margin-bottom: 14px;
+      background: #fff;
+    }
+    .share-modal-title { font-size: 13.5px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+    .share-modal-btn {
+      display: block; width: 100%; padding: 11px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+      margin-bottom: 9px; border: 1px solid transparent;
+    }
+    #btnShareNative { background: rgba(37,211,102,.16); border-color: rgba(37,211,102,.4); color: #5ee08a; }
+    #btnShareNative:hover { background: rgba(37,211,102,.26); }
+    #btnShareManual { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.18); color: #fff; }
+    #btnShareManual:hover { background: rgba(255,255,255,.12); }
+    .share-modal-close {
+      background: none; border: none; color: rgba(255,255,255,.4);
+      font-size: 12px; font-family: inherit; cursor: pointer; padding: 4px; margin-top: 2px;
+    }
+    .share-modal-close:hover { color: rgba(255,255,255,.65); }
+
     .footer { text-align: center; padding: 34px 16px 4px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.4); }
   </style>
 </head>
@@ -394,6 +431,66 @@ function _unduhBlob(blob, namaFile) {
   setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
 }
 
+// Modal "Laporan siap dikirim" — munculin preview gambar + 2 pilihan:
+//   1. Kirim ke WhatsApp (Gambar+Teks) -> native share, TAPI dipicu
+//      LANGSUNG dari klik tombol ini (bukan dari promise chain sebelumnya),
+//      supaya masih dianggap aksi user asli sama browser strict (iOS
+//      Safari). Cuma muncul kalau browsernya emang dukung.
+//   2. Download & Buka WA Manual -> fallback yang selalu jalan di mana aja.
+function _tampilkanModalShare(blob, namaFile, teksWA, judul, waWin) {
+  var previewUrl = URL.createObjectURL(blob);
+  var overlay = document.createElement('div');
+  overlay.className = 'share-modal-overlay';
+  overlay.innerHTML = ''
+    + '<div class="share-modal-card">'
+    + '<img src="' + previewUrl + '" alt="Preview laporan" class="share-modal-preview">'
+    + '<div class="share-modal-title">📋 Laporan siap dikirim</div>'
+    + (_bisaShareFile() ? '<button class="share-modal-btn" id="btnShareNative" type="button">📤 Kirim ke WhatsApp (Gambar+Teks)</button>' : '')
+    + '<button class="share-modal-btn" id="btnShareManual" type="button">⬇️ Download &amp; Buka WA Manual</button>'
+    + '<button class="share-modal-close" id="btnShareTutup" type="button">Batal</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+
+  var beres = false;
+  function tutupModal() {
+    beres = true;
+    URL.revokeObjectURL(previewUrl);
+    if (overlay.parentNode) document.body.removeChild(overlay);
+  }
+
+  var btnNative = document.getElementById('btnShareNative');
+  if (btnNative) {
+    btnNative.addEventListener('click', function () {
+      // Ini dipanggil PERSIS dari tap tombol -> transient user activation
+      // masih fresh, jadi navigator.share() gak ditolak browser.
+      var file = new File([blob], namaFile, { type: 'image/png' });
+      navigator.share({ files: [file], text: teksWA, title: judul })
+        .then(function () {
+          if (waWin && !waWin.closed) waWin.close();
+          tutupModal();
+        })
+        .catch(function (err) {
+          if (err && err.name === 'AbortError') return; // batal milih target, modal tetep kebuka
+          alert('Share otomatis gagal: ' + err.message + '.\nCoba tombol "Download & Buka WA Manual" di bawah.');
+        });
+    });
+  }
+
+  document.getElementById('btnShareManual').addEventListener('click', function () {
+    _unduhBlob(blob, namaFile);
+    bukaWhatsApp(teksWA, waWin);
+    tutupModal();
+    setTimeout(function () {
+      alert('📥 Gambar tabel sudah otomatis ke-download.\n\nDi jendela WhatsApp yang baru kebuka, klik ikon 📎 lalu lampirkan gambar yang baru ke-download itu sebelum kirim (WhatsApp tidak bisa nerima gambar+teks sekaligus lewat link).');
+    }, 400);
+  });
+
+  document.getElementById('btnShareTutup').addEventListener('click', function () {
+    if (waWin && !waWin.closed) waWin.close();
+    tutupModal();
+  });
+}
+
 // CSS khusus tabel di gambar screenshot: versi LIGHT (putih/terang), beda
 // dari tabel asli di halaman yang gelap. Semua selector di-scope di bawah
 // .shot-light biar gak nyenggol tampilan tabel asli yang lagi kelihatan di
@@ -503,42 +600,11 @@ function unduhScreenshotDanBuka(namaAreaFilter, judul, namaFile, teksWA, waWin) 
         bukaWhatsApp(teksWA, waWin);
         return;
       }
-
-      // Catatan: waWin SENGAJA belum ditutup di sini — baru ditutup kalau
-      // native share beneran berhasil / dibatalkan sendiri sama user. Kalau
-      // native share ditolak sama browser (mis. iOS Safari suka nolak kalau
-      // prosesnya kelamaan dari klik awal — errornya "not allowed by user
-      // agent"), waWin masih ada buat dipakai fallback manual, jadi WA-nya
-      // tetap kebuka + gambar tetap ke-download, gak hilang begitu aja.
-      if (_bisaShareFile()) {
-        var file = new File([blob], namaFile, { type: 'image/png' });
-        navigator.share({ files: [file], text: teksWA, title: judul })
-          .then(function () {
-            if (waWin && !waWin.closed) waWin.close(); // berhasil, gak jadi dipakai
-          })
-          .catch(function (err) {
-            if (err && err.name === 'AbortError') {
-              // User sengaja batal di share sheet -> hormati, gak usah fallback.
-              if (waWin && !waWin.closed) waWin.close();
-              return;
-            }
-            // Share otomatis gak bisa jalan di kondisi ini -> fallback ke
-            // cara manual (download + WA teks), tanpa bikin panik user.
-            _unduhBlob(blob, namaFile);
-            bukaWhatsApp(teksWA, waWin);
-            setTimeout(function () {
-              alert('📥 Gambar tabel sudah otomatis ke-download.\n\nDi jendela WhatsApp yang baru kebuka, klik ikon 📎 lalu lampirkan gambar yang baru ke-download itu sebelum kirim (WhatsApp tidak bisa nerima gambar+teks sekaligus lewat link).');
-            }, 400);
-          });
-        return;
-      }
-
-      // Fallback: browser gak dukung native share file.
-      _unduhBlob(blob, namaFile);
-      bukaWhatsApp(teksWA, waWin);
-      setTimeout(function () {
-        alert('📥 Gambar tabel sudah otomatis ke-download.\n\nDi jendela WhatsApp yang baru kebuka, klik ikon 📎 lalu lampirkan gambar yang baru ke-download itu sebelum kirim (WhatsApp tidak bisa nerima gambar+teks sekaligus lewat link).');
-      }, 400);
+      // Gambar + teks udah siap -> tampilin modal, JANGAN auto-trigger
+      // share dari sini (promise chain ini udah "basi" buat browser strict
+      // kayak iOS Safari). Biar valid, share harus dipicu LANGSUNG dari tap
+      // tombol di modal-nya.
+      _tampilkanModalShare(blob, namaFile, teksWA, judul, waWin);
     }, 'image/png');
   }).catch(function (err) {
     if (wrap.parentNode) document.body.removeChild(wrap);
